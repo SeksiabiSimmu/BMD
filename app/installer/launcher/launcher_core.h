@@ -94,7 +94,7 @@ void lc_sha256(const void *data, size_t len, unsigned char out[32]);
  * message (at most error_cap-1 wide characters, always terminated). */
 int lc_parse_args(int argc, wchar_t **argv, lc_options *options, wchar_t *error, size_t error_cap);
 
-/* Append the argument `text` in quotes to the command line in `buffer`: ` "text"`, or only "text"
+/* Append the argument `text` in quotes to the command line in `buffer`: ` "text"`, or only `"text"`
  * when the line is still empty (the program name is the first word). Refuses text containing a
  * quote or a control character: file names cannot contain them, so such input is a bug or an
  * attack, not a case to escape (Windows argument quoting is full of edge cases; never reaching
