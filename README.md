@@ -1,13 +1,59 @@
-[README.md](https://github.com/user-attachments/files/35513266/README.md)
-# Brave Music Downloader 2.5.0 — what is in this folder
+# Brave Music Downloader (BMD)
 
-Start with `BraveMusicDownloader-2.5.0-STATUS.md` (one screen) or with the report (everything, ten sections).
+A Brave browser extension plus a one-file Windows installer. It saves audio you own or have permission to save from YouTube as WAV (24-bit PCM), FLAC (24-bit lossless) or MP3 (320 kbps), with tags, BPM and cover artwork embedded in the file, and a simple dashboard with an "Advanced options" toggle.
+
+**Status: release candidate.** Built and tested on Linux and under Wine 10.0; the complete installation on a real Windows PC (Windows PowerShell 5.1, SmartScreen, the uninstaller, live downloads in Brave) is not verified yet. Work through `WINDOWS_QA.md` before relying on it. `CHANGELOG.md` describes what 2.5.0 contains; `docs/QA-REPORT-2.5.0.md` holds the full verification matrix of 18 user scenarios.
+
+## What is here
+
+| Path | What it is |
+| --- | --- |
+| `app/extension` | The Brave extension (Manifest V3): page button, context menu, shortcut, popup, dashboard |
+| `app/helper` | The helper: downloads, converts to WAV/FLAC/MP3, embeds tags, BPM and artwork; SQLite queue; native host |
+| `app/installer` | The installer engine, the container format of the setup file, and the C setup program |
+| `app/bridge` | The native-messaging bridge, compiled on the user's PC during setup |
+| `scripts` | The release build with its gates, the tool lock, the icon and check scripts |
+| `tests` | Python, JavaScript, native C and PowerShell suites, and a suite that loads the extension into a real Chromium |
+| `docs` | Installation guide, release process, QA reports |
+| `bench` | The benchmark harness and its raw results |
+
+## One step after cloning
+
+This repository was transferred through a text-only channel, so the four binary icon files travel base64-encoded inside `scripts/restore_binaries.py`. Run it once after cloning; it writes the files and verifies the SHA-256 of each:
+
+```
+python scripts/restore_binaries.py
+```
+
+(`app/installer/launcher/setup.ico` can also be produced from the PNG icons with `scripts/make_setup_icon.py`.)
+
+## Build
+
+```
+python scripts/build_release.py --out dist --require-pinned
+```
+
+`BUILDING.md` lists the requirements (Python 3.12+, Zig 0.14.1, and optionally Node 20+, ffmpeg/ffprobe and PowerShell 7), the full test commands, and what the build checks before it builds anything. The same sources, Zig version and tool lock always give byte-identical installers.
+
+## The 2.5.0 release package
+
+This repository is the tested source; the release files are built from it with the command above (see `docs/RELEASE.md`) and are not stored here. A finished 2.5.0 package contains:
 
 | File | What it is |
 | --- | --- |
-| `BraveMusicDownloader-2.5.0-STATUS.md` | Short status: rating, files with hashes, what is verified, what is not, decisions for the owner |
-| `BraveMusicDownloader-2.5.0-Report.docx`, `BraveMusicDownloader-2.5.0-Report.pdf` | Final report: executive summary, architecture audit, code cleanup, performance, security, test report with the 18-scenario matrix, compatibility, release information, remaining issues, release-readiness rating |
-| `BraveMusicDownloader-2.5.0/` | The release files: `BraveMusicDownloader-Setup.exe` (online installer), `BraveMusicDownloader-Setup-offline.exe` (about 200 MB, with all tools), `BraveMusicDownloader-extension-2.5.0.zip`, `Application.zip` and `Setup.ps1` (fallback without the exe), `SHA256SUMS.txt`, `release.json`, `release-wine-check.json`, `test-run.log`, `performance-final.json`, `screenshots/` |
-| `BraveMusicDownloader-2.5.0-source.zip` | The complete source tree as tested, top folder `BraveMusicDownloader-2.5.0` |
+| `BraveMusicDownloader-Setup.exe` | The installer, one file of about 220 KB (Python, yt-dlp, Deno and FFmpeg are downloaded and verified during the installation) |
+| `BraveMusicDownloader-Setup-offline.exe` | The offline installer, about 200 MB, with the four tools on board |
+| `BraveMusicDownloader-extension-2.5.0.zip` | The extension folder alone, to load manually |
+| `Application.zip`, `Setup.ps1` | The payload and the setup script, to install without the exe |
+| `SHA256SUMS.txt`, `release.json` | The hash of every file, sizes, the Zig version; both say plainly that nothing is signed |
+| `release-wine-check.json`, `test-run.log`, `performance-final.json` | The verification logs of the release check |
+| `screenshots/` | Screenshots of the extension and the setup program |
 
-**State: release candidate, not yet run on Windows.** Everything that can run without Windows was run and passed; the complete installation on a Windows PC (Windows PowerShell 5.1, SmartScreen, uninstaller, registry, live downloads in Brave) is unverified. The acceptance list is `WINDOWS_QA.md` in the source zip; the 18-scenario matrix is `docs/QA-REPORT-2.5.0.md`.
+## More
+
+- Install and command line: `docs/INSTALLATION.md` and `app/README.md`
+- The release process: `docs/RELEASE.md`
+- What was tested and how: `docs/QA-REPORT-2.5.0.md`
+- What still needs a Windows PC: `WINDOWS_QA.md`
+
+Download only content you own or have permission to save.

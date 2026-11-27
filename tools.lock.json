@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "note": "Every component is pinned: setup downloads exactly these versions and refuses a file with another SHA-256. How each value was cross-checked is listed under \"pinned\" (scripts/refresh_tool_lock.py). To take in newer tools run that script again, then rebuild.",
+  "components": [
+    {
+      "name": "python",
+      "version": "3.12.10",
+      "url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip",
+      "kind": "zip",
+      "extract_to": "python",
+      "provides": [
+        "python/python.exe"
+      ],
+      "sha256": "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3"
+    },
+    {
+      "name": "yt-dlp",
+      "version": "2026.11.23",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.11.23/yt-dlp.exe",
+      "kind": "exe",
+      "provides": [
+        "tools/yt-dlp.exe"
+      ],
+      "sha256": "622ed48023cac1daa52a3bf3a6ac38f03514de214b5f0fa069389fd0f6d17e5c"
+    },
+    {
+      "name": "deno",
+      "version": "2.9.8",
+      "url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-pc-windows-msvc.zip",
+      "kind": "zip",
+      "pick": {
+        "deno.exe": "tools/deno.exe"
+      },
+      "provides": [
+        "tools/deno.exe"
+      ],
+      "sha256": "cba84b26e0df5ae7f74fc66b86a95b866872a86292ebd84fa1e959927edd93bf"
+    },
+    {
+      "name": "ffmpeg",
+      "version": "9.1",
+      "url": "https://github.com/GyanD/codexffmpeg/releases/download/9.1/ffmpeg-9.1-essentials_build.zip",
+      "kind": "zip",
+      "pick": {
+        "ffmpeg.exe": "tools/ffmpeg.exe",
+        "ffprobe.exe": "tools/ffprobe.exe"
+      },
+      "provides": [
+        "tools/ffmpeg.exe",
+        "tools/ffprobe.exe"
+      ],
+      "sha256": "b9bbbb3acece000cbeec994f856649354e52c773807841e78908374b24d658fd"
+    }
+  ],
+  "pinned": {
+    "date": "2026-11-27",
+    "by": "scripts/refresh_tool_lock.py",
+    "evidence": {
+      "python": "Sigstore bundle; signer thomas@python.org through https://accounts.google.com, Rekor log index 194017046, as listed at https://www.python.org/downloads/metadata/sigstore",
+      "yt-dlp": "publisher checksum SHA2-256SUMS",
+      "deno": "publisher checksum deno-x86_64-pc-windows-msvc.zip.sha256sum",
+      "ffmpeg": "publisher checksum https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip.sha256"
+    }
+  }
+}
