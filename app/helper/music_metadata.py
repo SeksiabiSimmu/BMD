@@ -27,7 +27,7 @@ MAX_COVER = 6_000_000
 
 def _normalize(s):
     s = unicodedata.normalize('NFKC', str(s or '')).casefold()
-    s = re.sub(r'\s*\[({]\s*(official (music )?video|official audio|lyrics?|visualizer|hd|4k)\s*[\])}]', '', s)
+    s = re.sub(r'\s*[\[({]\s*(official (music )?video|official audio|lyrics?|visualizer|hd|4k)\s*[\])}]', '', s)
     s = re.sub(r'[^\w ]+', ' ', s, flags=re.UNICODE)
     return ' '.join(s.split())
 
