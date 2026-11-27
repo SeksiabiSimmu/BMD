@@ -602,7 +602,7 @@ Check 'window-xaml' {
     $manager.AddNamespace('x', $namespace)
     $named = @($xaml.SelectNodes("//*[@x:Name]", $manager) | ForEach-Object { $_.GetAttribute('Name', $namespace) } | Sort-Object -Unique)
     $source = Get-Content -LiteralPath (Join-Path $Repo 'Setup.ps1') -Raw
-    $lookedUp = @([regex]::Matches(($source -split "`n" | Where-Object { $_ -match 'foreach \($name in ' }), "'([^']+)'") |
+    $lookedUp = @([regex]::Matches(($source -split "`n" | Where-Object { $_ -match 'foreach \(\$name in ' }), "'([^']+)'" ) |
                   ForEach-Object { $_.Groups[1].Value })
     Assert-Same 8 $lookedUp.Count 'the code looks up eight controls'
     foreach ($name in $lookedUp) { Assert ($named -contains $name) "the window has a control named $name" }
