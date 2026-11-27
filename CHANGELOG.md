@@ -71,7 +71,7 @@ Formats, embedded metadata, a smart installer and a simpler UI — plus a full c
 - The deep dependency check streams the hash instead of loading the whole tool into memory (+300 MB for a 300 MB file before) and reports "unknown" instead of a false mismatch when no per-file hash was recorded.
 
 ### Fixed (Phase 2)
-- The popup's "Check connection" step compared the helper's version to a hard-coded `'2.0'`, so a freshly installed 2.3.0 helper reported "incompatible" and left the popup permanently "Disconnected" — the same symptom reported from a real Windows PC. The popup now checks the helper's version against a real floor and reports its version; the manifest already pins the allowed extension id, so the host is trusted once it answers.
+- The popup's "Check connection" step compared the helper's version to a hard-coded `'2.0'`, so a freshly installed 2.3.0 helper reported "incompatible" and left the popup permanently "Disconnected" — the same symptom reported from a real Windows 10 PC. The popup now checks the helper's version against a real floor and reports its version; the manifest already pins the allowed extension id, so the host is trusted once it answers.
 - A dead fourth argument to the preview `api()` call (a timeout the function signature never accepted) has been removed; the background already applies the 140 s preview timeout.
 
 ## 2.3.0
