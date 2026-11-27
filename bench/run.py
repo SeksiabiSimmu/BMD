@@ -76,7 +76,7 @@ def sec_host(quick):
     _, run = run_cmd([sys.executable, '-X', 'importtime', '-c', code], env=env)
     rows = []
     for line in run.stderr.splitlines():
-        m = re.match(r'import time:\s+(\d+) |\s+(\d+) | (\s*)(\S+)', line)
+        m = re.match(r'import time:\s+(\d+) \|\s+(\d+) \| (\s*)(\S+)', line)
         if m:
             rows.append((int(m.group(1)), int(m.group(2)), m.group(4)))
     total = next((c for s, c, n in rows if n == 'native_host'), None)
