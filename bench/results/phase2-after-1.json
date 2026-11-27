@@ -1,0 +1,38 @@
+{
+  "progress": {
+    "50_lines_every_100ms": {
+      "lines": 50,
+      "sleep_ms": 100,
+      "wall_ms": 5092,
+      "store_updates": 18,
+      "update_total_ms": 16.7,
+      "ui_page_latency_ms": {
+        "n": 970,
+        "min": 0.031,
+        "p50": 0.079,
+        "p95": 0.12,
+        "max": 2.532,
+        "mean": 0.091
+      },
+      "final_percent": 73,
+      "final_message": "Downloading\u2026 100.0%"
+    },
+    "300_lines_every_10ms": {
+      "lines": 300,
+      "sleep_ms": 10,
+      "wall_ms": 3115,
+      "store_updates": 13,
+      "update_total_ms": 12.3,
+      "ui_page_latency_ms": {
+        "n": 597,
+        "min": 0.029,
+        "p50": 0.078,
+        "p95": 0.108,
+        "max": 0.529,
+        "mean": 0.078
+      },
+      "final_percent": 73,
+      "final_message": "Downloading\u2026 100.0%"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "deephash": {
+    "file_mb": 300,
+    "diagnostics_deep_ms": 62.0,
+    "rss_before_mb": 29.4,
+    "rss_after_mb": 29.4,
+    "rss_spike_mb": 0.0,
+    "hash_matches_install": null
+  }
+}

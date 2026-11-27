@@ -1,0 +1,271 @@
+{
+  "host": {
+    "interpreter_floor_ms": {
+      "n": 15,
+      "min": 9.79,
+      "p50": 9.84,
+      "p95": 10.158,
+      "max": 10.898,
+      "mean": 9.937
+    },
+    "import_native_host_ms": 65.3,
+    "import_top_self_ms": [
+      [
+        "helper",
+        8.49
+      ],
+      [
+        "native_host",
+        4.07
+      ],
+      [
+        "store",
+        3.17
+      ],
+      [
+        "music_metadata",
+        2.23
+      ],
+      [
+        "ssl",
+        1.98
+      ],
+      [
+        "bmdfs",
+        1.67
+      ],
+      [
+        "_hashlib",
+        1.54
+      ],
+      [
+        "platform",
+        1.42
+      ],
+      [
+        "logging",
+        1.39
+      ],
+      [
+        "subprocess",
+        1.39
+      ]
+    ],
+    "cold_spawn_to_first_reply_ms": {
+      "n": 5,
+      "min": 61.071,
+      "p50": 69.712,
+      "p95": 71.505,
+      "max": 71.505,
+      "mean": 67.034
+    },
+    "warm_spawn_to_first_reply_ms": {
+      "n": 15,
+      "min": 45.766,
+      "p50": 54.382,
+      "p95": 57.269,
+      "max": 57.282,
+      "mean": 52.406
+    },
+    "warm_with_10000_row_db_ms": {
+      "n": 8,
+      "min": 49.641,
+      "p50": 62.899,
+      "p95": 104.366,
+      "max": 104.366,
+      "mean": 66.184
+    },
+    "warm_with_100000_row_db_ms": {
+      "n": 8,
+      "min": 48.098,
+      "p50": 54.333,
+      "p95": 98.234,
+      "max": 98.234,
+      "mean": 59.163
+    }
+  },
+  "_timing_s": {
+    "host": 5.5,
+    "nm": 2.0,
+    "pipeline": 7.2
+  },
+  "nm": {
+    "health_rtt_ms": {
+      "n": 300,
+      "min": 0.014,
+      "p50": 0.026,
+      "p95": 0.206,
+      "max": 0.389,
+      "mean": 0.05
+    },
+    "jobs50_rtt_ms": {
+      "n": 300,
+      "min": 1.611,
+      "p50": 2.122,
+      "p95": 2.621,
+      "max": 35.249,
+      "mean": 2.286
+    },
+    "jobs6_rtt_ms": {
+      "n": 300,
+      "min": 0.5,
+      "p50": 1.248,
+      "p95": 1.485,
+      "max": 2.791,
+      "mean": 1.239
+    },
+    "jobs1_rtt_ms": {
+      "n": 300,
+      "min": 0.404,
+      "p50": 0.474,
+      "p95": 0.55,
+      "max": 0.902,
+      "mean": 0.481
+    },
+    "jobs50_reply_bytes": 37109,
+    "pipelined_jobs50_req_per_s": 741.2,
+    "host_cpu_s_total": 1.29,
+    "host_peak_rss_mb": 26.2,
+    "requests": 1501
+  },
+  "pipeline": {
+    "spawn_latency_ms": {
+      "python -c pass": {
+        "n": 20,
+        "min": 8.02,
+        "p50": 8.124,
+        "p95": 8.473,
+        "max": 9.028,
+        "mean": 8.191
+      },
+      "ffprobe -version": {
+        "n": 20,
+        "min": 29.701,
+        "p50": 32.206,
+        "p95": 33.163,
+        "max": 33.356,
+        "mean": 32.105
+      },
+      "ffmpeg -version": {
+        "n": 20,
+        "min": 30.026,
+        "p50": 30.839,
+        "p95": 32.327,
+        "max": 32.697,
+        "mean": 31.042
+      }
+    },
+    "short": {
+      "scenario": "short",
+      "audio_seconds": 180,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 5.06,
+      "per_job_s": 5.06,
+      "realtime_factor": 35.6,
+      "cpu_s": 4.98,
+      "cpu_utilisation": 0.99,
+      "processes_spawned": 6,
+      "processes_per_job": 6.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 25.6
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 0.8
+        },
+        "ffmpeg:loudnorm-analysis": {
+          "calls": 1,
+          "ms": 4178.7
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 39.0
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 668.7
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 41.9
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 44.7
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 49.0
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.1
+        }
+      },
+      "store_updates": 9,
+      "store_update_total_ms": 4.4,
+      "ffmpeg_peak_rss_mb": 104.7,
+      "python_peak_rss_mb": 28.3,
+      "peak_disk_mb": 48.2,
+      "final_wav_mb": 45.4,
+      "block_out_mb": 48.5
+    },
+    "short-nonorm": {
+      "scenario": "short-nonorm",
+      "audio_seconds": 180,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 0.46,
+      "per_job_s": 0.46,
+      "realtime_factor": 387.4,
+      "cpu_s": 0.41,
+      "cpu_utilisation": 0.88,
+      "processes_spawned": 5,
+      "processes_per_job": 5.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 25.5
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 0.7
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 35.0
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 257.5
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 42.6
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 46.0
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 50.7
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.0
+        }
+      },
+      "store_updates": 8,
+      "store_update_total_ms": 6.0,
+      "ffmpeg_peak_rss_mb": 51.2,
+      "python_peak_rss_mb": 27.5,
+      "peak_disk_mb": 48.2,
+      "final_wav_mb": 45.4,
+      "block_out_mb": 48.4
+    }
+  }
+}

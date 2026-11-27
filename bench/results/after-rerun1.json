@@ -1,0 +1,90 @@
+{
+  "host": {
+    "interpreter_floor_ms": {
+      "n": 15,
+      "min": 8.709,
+      "p50": 8.969,
+      "p95": 11.546,
+      "max": 13.129,
+      "mean": 9.513
+    },
+    "import_native_host_ms": 60.9,
+    "import_top_self_ms": [
+      [
+        "helper",
+        7.97
+      ],
+      [
+        "native_host",
+        3.8
+      ],
+      [
+        "store",
+        3.04
+      ],
+      [
+        "music_metadata",
+        2.1
+      ],
+      [
+        "ssl",
+        1.84
+      ],
+      [
+        "bmdfs",
+        1.61
+      ],
+      [
+        "_hashlib",
+        1.56
+      ],
+      [
+        "subprocess",
+        1.38
+      ],
+      [
+        "logging",
+        1.24
+      ],
+      [
+        "platform",
+        1.19
+      ]
+    ],
+    "cold_spawn_to_first_reply_ms": {
+      "n": 5,
+      "min": 72.567,
+      "p50": 85.225,
+      "p95": 92.807,
+      "max": 92.807,
+      "mean": 83.913
+    },
+    "warm_spawn_to_first_reply_ms": {
+      "n": 15,
+      "min": 49.549,
+      "p50": 58.03,
+      "p95": 64.359,
+      "max": 70.821,
+      "mean": 56.909
+    },
+    "warm_with_10000_row_db_ms": {
+      "n": 8,
+      "min": 47.066,
+      "p50": 49.337,
+      "p95": 60.602,
+      "max": 60.602,
+      "mean": 52.039
+    },
+    "warm_with_100000_row_db_ms": {
+      "n": 8,
+      "min": 50.931,
+      "p50": 59.508,
+      "p95": 128.092,
+      "max": 128.092,
+      "mean": 66.675
+    }
+  },
+  "_timing_s": {
+    "host": 5.8
+  }
+}

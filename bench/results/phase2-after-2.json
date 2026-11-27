@@ -1,0 +1,18 @@
+{
+  "library": {
+    "10000": {
+      "first_reconcile_ms": 172.8,
+      "first_reconcile_commits": 20,
+      "second_reconcile_ms": 114.9,
+      "peak_rss_mb": 32.1,
+      "rss_before_mb": 29.4
+    },
+    "100000": {
+      "first_reconcile_ms": 2162.8,
+      "first_reconcile_commits": 200,
+      "second_reconcile_ms": 1532.4,
+      "peak_rss_mb": 51.6,
+      "rss_before_mb": 37.9
+    }
+  }
+}

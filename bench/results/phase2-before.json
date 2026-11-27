@@ -1,0 +1,80 @@
+{
+  "progress": {
+    "50_lines_every_100ms": {
+      "lines": 50,
+      "sleep_ms": 100,
+      "wall_ms": 5099,
+      "store_updates": 50,
+      "update_total_ms": 53.1,
+      "ui_page_latency_ms": {
+        "n": 965,
+        "min": 0.034,
+        "p50": 0.085,
+        "p95": 0.135,
+        "max": 3.831,
+        "mean": 0.104
+      },
+      "final_percent": 73,
+      "final_message": "Downloading\u2026 100.0%"
+    },
+    "300_lines_every_10ms": {
+      "lines": 300,
+      "sleep_ms": 10,
+      "wall_ms": 3158,
+      "store_updates": 300,
+      "update_total_ms": 245.1,
+      "ui_page_latency_ms": {
+        "n": 602,
+        "min": 0.033,
+        "p50": 0.085,
+        "p95": 0.123,
+        "max": 2.26,
+        "mean": 0.102
+      },
+      "final_percent": 73,
+      "final_message": "Downloading\u2026 100.0%"
+    }
+  },
+  "deephash": {
+    "file_mb": 300,
+    "diagnostics_deep_ms": 781.5,
+    "rss_before_mb": 28.2,
+    "rss_after_mb": 328.4,
+    "rss_spike_mb": 300.1,
+    "hash_matches_install": false
+  },
+  "reconnect": {
+    "graceful_exit": {
+      "n": 10,
+      "min": 20.836,
+      "p50": 109.483,
+      "p95": 200.337,
+      "max": 200.337,
+      "mean": 124.097
+    },
+    "killed": {
+      "n": 10,
+      "min": 7.343,
+      "p50": 84.341,
+      "p95": 127.473,
+      "max": 127.473,
+      "mean": 81.769
+    }
+  },
+  "library": {
+    "10000": {
+      "first_reconcile_ms": 1759.2,
+      "first_reconcile_commits": 10000,
+      "second_reconcile_ms": 287.8,
+      "peak_rss_mb": 38.4,
+      "rss_before_mb": 29.2
+    },
+    "100000": {
+      "first_reconcile_ms": 18505.8,
+      "first_reconcile_commits": 100000,
+      "second_reconcile_ms": 2727.1,
+      "peak_rss_mb": 125.6,
+      "rss_before_mb": 37.9
+    }
+  }
+}
