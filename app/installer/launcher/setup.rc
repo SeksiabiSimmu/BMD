@@ -1,0 +1,31 @@
+/* Resources of the setup program: its icon and version information.
+   Built by scripts/build_launcher.py with `zig rc`. setup_version.h holds the version numbers,
+   so this file needs no editing between releases. The manifest is linked from setup.manifest. */
+#include <windows.h>
+#include "setup_version.h"
+
+1 ICON "setup.ico"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION SETUP_VER_MAJOR,SETUP_VER_MINOR,SETUP_VER_PATCH,0
+PRODUCTVERSION SETUP_VER_MAJOR,SETUP_VER_MINOR,SETUP_VER_PATCH,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "Brave Music Downloader Setup"
+            VALUE "FileVersion", SETUP_VERSION_TEXT
+            VALUE "InternalName", "BraveMusicDownloader-Setup"
+            VALUE "OriginalFilename", "BraveMusicDownloader-Setup.exe"
+            VALUE "ProductName", "Brave Music Downloader"
+            VALUE "ProductVersion", SETUP_VERSION_TEXT
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
