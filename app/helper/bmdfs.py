@@ -23,7 +23,7 @@ def is_link(path):
     p = os.fspath(path)
     if os.path.islink(p):
         return True
-    junction = getattr(os.path, 'isjunction', None)
+    junction = getattr(os, 'isjunction', None)
     return bool(junction and junction(p))
 
 
