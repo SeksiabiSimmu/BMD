@@ -1,0 +1,31 @@
+== env ...
+   done in 0.0s
+== installer ...
+   done in 0.2s
+== host ...
+   done in 5.2s
+== nm ...
+   done in 2.3s
+== reconnect ...
+   done in 14.9s
+== store ...
+Traceback (most recent call last):
+  File "/home/claude/bmd/bench/run.py", line 625, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/claude/bmd/bench/run.py", line 617, in main
+    results[name] = SECTIONS[name](quick)
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/bmd/bench/run.py", line 232, in sec_store
+    r['enqueue_200_ms'] = round(_time(lambda: s.enqueue(items, True, True, find_existing=None)), 2)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/bmd/bench/run.py", line 252, in _time
+    fn()
+  File "/home/claude/bmd/bench/run.py", line 232, in <lambda>
+    r['enqueue_200_ms'] = round(_time(lambda: s.enqueue(items, True, True, find_existing=None)), 2)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/bmd/app/helper/store.py", line 206, in enqueue
+    raise ValueError('Queue history limit reached; clear finished jobs first')
+ValueError: Queue history limit reached; clear finished jobs first
+section store FAILED
+== library ...

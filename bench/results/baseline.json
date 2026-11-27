@@ -1,0 +1,1099 @@
+{
+  "env": {
+    "platform": "Linux-6.18.44-fc-v726-x86_64-with-glibc2.39",
+    "cpus": 1,
+    "python": "3.12.3",
+    "sqlite": "3.45.1",
+    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5",
+    "ram_mb": 3992,
+    "fsync_4k_ms": {
+      "n": 60,
+      "min": 0.112,
+      "p50": 0.127,
+      "p95": 0.154,
+      "max": 0.461,
+      "mean": 0.135
+    }
+  },
+  "_timing_s": {
+    "env": 0.0,
+    "installer": 0.2,
+    "host": 5.2,
+    "nm": 2.3,
+    "reconnect": 17.4,
+    "store": 5.4,
+    "library": 30.1,
+    "misc": 10.0,
+    "pipeline": 6.9,
+    "cancel": 6.5
+  },
+  "installer": {
+    "bytes": {
+      "Setup.ps1": 8955,
+      "Application.zip": 80541,
+      "SHA256SUMS.txt": 399,
+      "SetupStub.cs": 2672,
+      "release.json": 978,
+      "Build-Exe.cmd": 965,
+      "Install-Dev.cmd": 193,
+      "installer_launcher.generated.c": 542324
+    },
+    "payload_files": 25,
+    "payload_uncompressed_bytes": 217919,
+    "note": "Tool download sizes and install time need real measurement on Windows (bench/Measure-Windows.ps1)."
+  },
+  "host": {
+    "interpreter_floor_ms": {
+      "n": 15,
+      "min": 8.238,
+      "p50": 8.696,
+      "p95": 9.131,
+      "max": 9.548,
+      "mean": 8.742
+    },
+    "import_native_host_ms": 64.6,
+    "import_top_self_ms": [
+      [
+        "helper",
+        7.95
+      ],
+      [
+        "native_host",
+        4.23
+      ],
+      [
+        "store",
+        2.73
+      ],
+      [
+        "music_metadata",
+        2.0
+      ],
+      [
+        "ssl",
+        1.95
+      ],
+      [
+        "logging",
+        1.8
+      ],
+      [
+        "_hashlib",
+        1.58
+      ],
+      [
+        "bmdfs",
+        1.5
+      ],
+      [
+        "_ssl",
+        1.46
+      ],
+      [
+        "subprocess",
+        1.28
+      ]
+    ],
+    "cold_spawn_to_first_reply_ms": {
+      "n": 5,
+      "min": 64.663,
+      "p50": 67.071,
+      "p95": 67.874,
+      "max": 67.874,
+      "mean": 66.55
+    },
+    "warm_spawn_to_first_reply_ms": {
+      "n": 15,
+      "min": 49.96,
+      "p50": 51.394,
+      "p95": 54.409,
+      "max": 54.689,
+      "mean": 51.759
+    },
+    "warm_with_10000_row_db_ms": {
+      "n": 8,
+      "min": 52.18,
+      "p50": 53.214,
+      "p95": 56.442,
+      "max": 56.442,
+      "mean": 53.391
+    },
+    "warm_with_100000_row_db_ms": {
+      "n": 8,
+      "min": 48.885,
+      "p50": 54.427,
+      "p95": 96.826,
+      "max": 96.826,
+      "mean": 60.024
+    }
+  },
+  "nm": {
+    "health_rtt_ms": {
+      "n": 300,
+      "min": 0.015,
+      "p50": 0.03,
+      "p95": 0.24,
+      "max": 0.389,
+      "mean": 0.058
+    },
+    "jobs50_rtt_ms": {
+      "n": 300,
+      "min": 1.53,
+      "p50": 2.739,
+      "p95": 3.457,
+      "max": 38.176,
+      "mean": 2.808
+    },
+    "jobs6_rtt_ms": {
+      "n": 300,
+      "min": 0.512,
+      "p50": 1.74,
+      "p95": 2.288,
+      "max": 3.153,
+      "mean": 1.726
+    },
+    "jobs1_rtt_ms": {
+      "n": 300,
+      "min": 0.386,
+      "p50": 0.43,
+      "p95": 0.67,
+      "max": 1.141,
+      "mean": 0.448
+    },
+    "jobs50_reply_bytes": 37115,
+    "pipelined_jobs50_req_per_s": 863.0,
+    "host_cpu_s_total": 1.56,
+    "host_peak_rss_mb": 25.8,
+    "requests": 1501
+  },
+  "reconnect": {
+    "graceful_exit": {
+      "old_helper_exit_ms": {
+        "n": 10,
+        "min": 17.983,
+        "p50": 31.674,
+        "p95": 33.254,
+        "max": 33.254,
+        "mean": 29.449
+      },
+      "until_new_helper_answers_ms": {
+        "n": 10,
+        "min": 49.946,
+        "p50": 78.117,
+        "p95": 190.989,
+        "max": 190.989,
+        "mean": 92.738
+      }
+    },
+    "killed": {
+      "old_helper_exit_ms": {
+        "n": 10,
+        "min": 0.811,
+        "p50": 1.188,
+        "p95": 2.005,
+        "max": 2.005,
+        "mean": 1.312
+      },
+      "until_new_helper_answers_ms": {
+        "n": 10,
+        "min": 4.04,
+        "p50": 64.332,
+        "p95": 150.634,
+        "max": 150.634,
+        "mean": 67.884
+      }
+    },
+    "lock_poll_interval_ms": 200,
+    "extension_fixed_pause_before_retry_ms": 350
+  },
+  "store": {
+    "1000": {
+      "db_mb": 1.24,
+      "open_ms": {
+        "n": 5,
+        "min": 0.152,
+        "p50": 0.186,
+        "p95": 1.405,
+        "max": 1.405,
+        "mean": 0.446
+      },
+      "page50_first_ms": {
+        "n": 40,
+        "min": 0.219,
+        "p50": 0.379,
+        "p95": 0.462,
+        "max": 0.501,
+        "mean": 0.362
+      },
+      "walk_all_pages200_total_ms": 5.9,
+      "walk_pages": 5,
+      "page50_at_50pct_ms": {
+        "n": 30,
+        "min": 0.233,
+        "p50": 0.248,
+        "p95": 0.279,
+        "max": 0.297,
+        "mean": 0.253
+      },
+      "page50_at_95pct_ms": {
+        "n": 30,
+        "min": 0.233,
+        "p50": 0.244,
+        "p95": 0.272,
+        "max": 0.277,
+        "mean": 0.248
+      },
+      "page50_state_done_ms": {
+        "n": 30,
+        "min": 0.227,
+        "p50": 0.241,
+        "p95": 0.266,
+        "max": 0.343,
+        "mean": 0.246
+      },
+      "page50_active_ms": {
+        "n": 30,
+        "min": 0.149,
+        "p50": 0.154,
+        "p95": 0.21,
+        "max": 0.27,
+        "mean": 0.164
+      },
+      "counts_ms": {
+        "n": 30,
+        "min": 0.038,
+        "p50": 0.038,
+        "p95": 0.058,
+        "max": 0.085,
+        "mean": 0.041
+      },
+      "states_100_ids_ms": {
+        "n": 20,
+        "min": 0.235,
+        "p50": 0.241,
+        "p95": 0.294,
+        "max": 0.314,
+        "mean": 0.251
+      },
+      "get_ms": {
+        "n": 200,
+        "min": 0.007,
+        "p50": 0.007,
+        "p95": 0.01,
+        "max": 0.039,
+        "mean": 0.008
+      },
+      "update_progress_ms": {
+        "n": 300,
+        "min": 0.145,
+        "p50": 0.186,
+        "p95": 0.233,
+        "max": 0.816,
+        "mean": 0.191
+      },
+      "update_profile_ms_per_call": {
+        "total": 0.1367,
+        "sqlite_commit": 0.0925,
+        "json_dumps": 0.0114,
+        "json_loads": 0.0112,
+        "execute": 0.0115
+      },
+      "enqueue_200_ms": 3.79,
+      "enqueue_blocked_by_history_limit": false,
+      "library_put_commit_each_x1000_ms": 112.7,
+      "library_put_one_transaction_x1000_ms": 2.4,
+      "reference_payload_LIKE_scan_ms": 0.6,
+      "clear_finished_ms": 4.7,
+      "wal_mb_after": 3.94
+    },
+    "10000": {
+      "db_mb": 12.35,
+      "open_ms": {
+        "n": 5,
+        "min": 0.118,
+        "p50": 0.171,
+        "p95": 6.083,
+        "max": 6.083,
+        "mean": 1.386
+      },
+      "page50_first_ms": {
+        "n": 40,
+        "min": 0.222,
+        "p50": 0.235,
+        "p95": 0.261,
+        "max": 0.384,
+        "mean": 0.243
+      },
+      "walk_all_pages200_total_ms": 57.1,
+      "walk_pages": 50,
+      "page50_at_50pct_ms": {
+        "n": 30,
+        "min": 0.246,
+        "p50": 0.283,
+        "p95": 0.339,
+        "max": 0.383,
+        "mean": 0.29
+      },
+      "page50_at_95pct_ms": {
+        "n": 30,
+        "min": 0.247,
+        "p50": 0.283,
+        "p95": 0.315,
+        "max": 0.324,
+        "mean": 0.28
+      },
+      "page50_state_done_ms": {
+        "n": 30,
+        "min": 0.231,
+        "p50": 0.266,
+        "p95": 0.326,
+        "max": 0.407,
+        "mean": 0.277
+      },
+      "page50_active_ms": {
+        "n": 30,
+        "min": 0.336,
+        "p50": 0.364,
+        "p95": 0.435,
+        "max": 0.63,
+        "mean": 0.375
+      },
+      "counts_ms": {
+        "n": 30,
+        "min": 0.329,
+        "p50": 0.351,
+        "p95": 0.426,
+        "max": 0.807,
+        "mean": 0.371
+      },
+      "states_100_ids_ms": {
+        "n": 20,
+        "min": 0.245,
+        "p50": 0.258,
+        "p95": 0.322,
+        "max": 0.429,
+        "mean": 0.273
+      },
+      "get_ms": {
+        "n": 200,
+        "min": 0.007,
+        "p50": 0.008,
+        "p95": 0.008,
+        "max": 0.056,
+        "mean": 0.008
+      },
+      "update_progress_ms": {
+        "n": 300,
+        "min": 0.152,
+        "p50": 0.199,
+        "p95": 0.257,
+        "max": 1.554,
+        "mean": 0.207
+      },
+      "update_profile_ms_per_call": {
+        "total": 0.2171,
+        "sqlite_commit": 0.1487,
+        "json_dumps": 0.0181,
+        "json_loads": 0.0163,
+        "execute": 0.0189
+      },
+      "enqueue_blocked_by_history_limit": "Queue history limit reached; clear finished jobs first",
+      "enqueue_200_ms_with_limit_lifted": 6.91,
+      "library_put_commit_each_x1000_ms": 114.5,
+      "library_put_one_transaction_x1000_ms": 2.1,
+      "reference_payload_LIKE_scan_ms": 4.7,
+      "clear_finished_ms": 71.8,
+      "wal_mb_after": 15.0
+    },
+    "100000": {
+      "db_mb": 124.11,
+      "open_ms": {
+        "n": 5,
+        "min": 0.118,
+        "p50": 0.21,
+        "p95": 47.605,
+        "max": 47.605,
+        "mean": 9.691
+      },
+      "page50_first_ms": {
+        "n": 40,
+        "min": 0.23,
+        "p50": 0.243,
+        "p95": 0.293,
+        "max": 0.424,
+        "mean": 0.255
+      },
+      "walk_all_pages200_total_ms": 577.8,
+      "walk_pages": 500,
+      "page50_at_50pct_ms": {
+        "n": 30,
+        "min": 0.234,
+        "p50": 0.25,
+        "p95": 0.3,
+        "max": 0.302,
+        "mean": 0.259
+      },
+      "page50_at_95pct_ms": {
+        "n": 30,
+        "min": 0.238,
+        "p50": 0.253,
+        "p95": 0.328,
+        "max": 0.361,
+        "mean": 0.268
+      },
+      "page50_state_done_ms": {
+        "n": 30,
+        "min": 0.23,
+        "p50": 0.244,
+        "p95": 0.306,
+        "max": 0.324,
+        "mean": 0.256
+      },
+      "page50_active_ms": {
+        "n": 30,
+        "min": 1.414,
+        "p50": 1.484,
+        "p95": 1.99,
+        "max": 2.382,
+        "mean": 1.558
+      },
+      "counts_ms": {
+        "n": 30,
+        "min": 5.069,
+        "p50": 5.385,
+        "p95": 6.614,
+        "max": 6.62,
+        "mean": 5.509
+      },
+      "states_100_ids_ms": {
+        "n": 20,
+        "min": 0.258,
+        "p50": 0.291,
+        "p95": 0.342,
+        "max": 0.469,
+        "mean": 0.303
+      },
+      "get_ms": {
+        "n": 200,
+        "min": 0.007,
+        "p50": 0.009,
+        "p95": 0.015,
+        "max": 0.075,
+        "mean": 0.01
+      },
+      "update_progress_ms": {
+        "n": 300,
+        "min": 0.157,
+        "p50": 0.2,
+        "p95": 0.279,
+        "max": 1.002,
+        "mean": 0.212
+      },
+      "update_profile_ms_per_call": {
+        "total": 0.1713,
+        "sqlite_commit": 0.1226,
+        "json_dumps": 0.0131,
+        "json_loads": 0.0116,
+        "execute": 0.0132
+      },
+      "enqueue_blocked_by_history_limit": "Queue history limit reached; clear finished jobs first",
+      "enqueue_200_ms_with_limit_lifted": 6.53,
+      "library_put_commit_each_x1000_ms": 124.1,
+      "library_put_one_transaction_x1000_ms": 1.6,
+      "reference_payload_LIKE_scan_ms": 35.5,
+      "clear_finished_ms": 880.3,
+      "wal_mb_after": 127.63
+    }
+  },
+  "library": {
+    "1000": {
+      "files": 1000,
+      "create_files_s": 0.0,
+      "first_reconcile_ms": 174.9,
+      "first_reconcile_commits": 1000,
+      "first_summary": {
+        "indexed": 1000,
+        "forgotten": 0,
+        "stale_temp_removed": 0,
+        "orphan_sidecars": 0
+      },
+      "second_reconcile_ms": 19.2,
+      "second_summary": {
+        "indexed": 0,
+        "forgotten": 0,
+        "stale_temp_removed": 0,
+        "orphan_sidecars": 0
+      },
+      "find_existing_1000_ms": 9.1,
+      "peak_rss_mb": 27.9,
+      "rss_before_mb": 27.0
+    },
+    "10000": {
+      "files": 10000,
+      "create_files_s": 0.2,
+      "first_reconcile_ms": 1616.1,
+      "first_reconcile_commits": 10000,
+      "first_summary": {
+        "indexed": 10000,
+        "forgotten": 0,
+        "stale_temp_removed": 0,
+        "orphan_sidecars": 0
+      },
+      "second_reconcile_ms": 231.1,
+      "second_summary": {
+        "indexed": 0,
+        "forgotten": 0,
+        "stale_temp_removed": 0,
+        "orphan_sidecars": 0
+      },
+      "find_existing_1000_ms": 11.2,
+      "peak_rss_mb": 38.2,
+      "rss_before_mb": 28.2
+    },
+    "100000": {
+      "files": 100000,
+      "create_files_s": 2.0,
+      "first_reconcile_ms": 16073.0,
+      "first_reconcile_commits": 100000,
+      "first_summary": {
+        "indexed": 100000,
+        "forgotten": 0,
+        "stale_temp_removed": 0,
+        "orphan_sidecars": 0
+      },
+      "second_reconcile_ms": 2015.5,
+      "second_summary": {
+        "indexed": 0,
+        "forgotten": 0,
+        "stale_temp_removed": 0,
+        "orphan_sidecars": 0
+      },
+      "find_existing_1000_ms": 14.0,
+      "peak_rss_mb": 125.6,
+      "rss_before_mb": 37.8
+    }
+  },
+  "misc": {
+    "diagnostics_ms": {
+      "n": 5,
+      "min": 83.826,
+      "p50": 94.557,
+      "p95": 103.717,
+      "max": 103.717,
+      "mean": 92.541
+    },
+    "diagnostics_processes_spawned_per_call": 3.0,
+    "diagnostics_cached_for_s": 30,
+    "diagnostics_deep_hash": {
+      "file_mb": 300,
+      "diagnostics_deep_ms": 426.7,
+      "rss_before_mb": 28.2,
+      "rss_after_mb": 328.4,
+      "rss_spike_mb": 300.1,
+      "hash_matches_install": false
+    },
+    "sweep_cache": {
+      "1000": {
+        "scan_keep_all_ms": 5.0,
+        "scan_and_remove_all_ms": 120.0
+      },
+      "10000": {
+        "scan_keep_all_ms": 65.3,
+        "scan_and_remove_all_ms": 1307.1
+      }
+    },
+    "jobs50_json_bytes": 39426,
+    "ui_static": {
+      "dashboard.js": {
+        "timers": [
+          [
+            "setInterval",
+            "2200"
+          ]
+        ]
+      },
+      "popup.js": {
+        "timers": []
+      },
+      "background.js": {
+        "timers": []
+      },
+      "dashboard_fill_createElement_calls_per_job": 1,
+      "dashboard_fill_replaces_all_nodes_each_poll": true
+    },
+    "node_json_parse_50_jobs_ms": 0.0607
+  },
+  "pipeline": {
+    "spawn_latency_ms": {
+      "python -c pass": {
+        "n": 20,
+        "min": 9.125,
+        "p50": 9.599,
+        "p95": 15.996,
+        "max": 22.873,
+        "mean": 11.324
+      },
+      "ffprobe -version": {
+        "n": 20,
+        "min": 32.169,
+        "p50": 35.951,
+        "p95": 49.431,
+        "max": 50.494,
+        "mean": 38.557
+      },
+      "ffmpeg -version": {
+        "n": 20,
+        "min": 31.193,
+        "p50": 31.66,
+        "p95": 33.14,
+        "max": 33.147,
+        "mean": 31.877
+      }
+    },
+    "short": {
+      "scenario": "short",
+      "audio_seconds": 180,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 5.04,
+      "per_job_s": 5.04,
+      "realtime_factor": 35.7,
+      "cpu_s": 4.96,
+      "cpu_utilisation": 0.98,
+      "processes_spawned": 6,
+      "processes_per_job": 6.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 43.8
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 0.8
+        },
+        "ffmpeg:loudnorm-analysis": {
+          "calls": 1,
+          "ms": 4282.3
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 33.4
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 563.8
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 32.1
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 45.4
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 37.2
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.0
+        }
+      },
+      "store_updates": 67,
+      "store_update_total_ms": 23.6,
+      "ffmpeg_peak_rss_mb": 104.6,
+      "python_peak_rss_mb": 27.3,
+      "peak_disk_mb": 48.2,
+      "final_wav_mb": 45.4,
+      "block_out_mb": 49.4
+    },
+    "short-nonorm": {
+      "scenario": "short-nonorm",
+      "audio_seconds": 180,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 0.4,
+      "per_job_s": 0.4,
+      "realtime_factor": 452.1,
+      "cpu_s": 0.35,
+      "cpu_utilisation": 0.87,
+      "processes_spawned": 5,
+      "processes_per_job": 5.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 37.1
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 0.7
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 33.3
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 213.9
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 33.2
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 40.4
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 35.3
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.0
+        }
+      },
+      "store_updates": 66,
+      "store_update_total_ms": 19.1,
+      "ffmpeg_peak_rss_mb": 51.1,
+      "python_peak_rss_mb": 27.4,
+      "peak_disk_mb": 48.2,
+      "final_wav_mb": 45.4,
+      "block_out_mb": 49.3
+    },
+    "short-trim": {
+      "scenario": "short-trim",
+      "audio_seconds": 180,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 4.73,
+      "per_job_s": 4.73,
+      "realtime_factor": 38.0,
+      "cpu_s": 4.67,
+      "cpu_utilisation": 0.99,
+      "processes_spawned": 7,
+      "processes_per_job": 7.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 35.6
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 0.6
+        },
+        "ffmpeg:trim-prepass": {
+          "calls": 1,
+          "ms": 206.0
+        },
+        "ffmpeg:loudnorm-analysis": {
+          "calls": 1,
+          "ms": 3739.2
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 32.4
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 591.9
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 31.8
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 43.7
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 42.4
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.0
+        }
+      },
+      "store_updates": 68,
+      "store_update_total_ms": 19.3,
+      "ffmpeg_peak_rss_mb": 104.3,
+      "python_peak_rss_mb": 27.3,
+      "peak_disk_mb": 108.8,
+      "final_wav_mb": 45.4,
+      "block_out_mb": 109.9
+    },
+    "playlist20": {
+      "scenario": "playlist20",
+      "audio_seconds": 180,
+      "jobs": 20,
+      "all_done": true,
+      "wall_s": 114.65,
+      "per_job_s": 5.73,
+      "realtime_factor": 31.4,
+      "cpu_s": 112.9,
+      "cpu_utilisation": 0.98,
+      "processes_spawned": 120,
+      "processes_per_job": 6.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 20,
+          "ms": 793.2
+        },
+        "finalize-download": {
+          "calls": 20,
+          "ms": 13.4
+        },
+        "ffmpeg:loudnorm-analysis": {
+          "calls": 20,
+          "ms": 97852.2
+        },
+        "ffprobe:sample-rate": {
+          "calls": 20,
+          "ms": 787.2
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 20,
+          "ms": 12493.0
+        },
+        "ffprobe:validate": {
+          "calls": 20,
+          "ms": 776.8
+        },
+        "fsync-wav": {
+          "calls": 20,
+          "ms": 927.6
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 20,
+          "ms": 887.4
+        },
+        "atomic-commit": {
+          "calls": 60,
+          "ms": 0.1
+        }
+      },
+      "store_updates": 1340,
+      "store_update_total_ms": 385.7,
+      "ffmpeg_peak_rss_mb": 104.8,
+      "python_peak_rss_mb": 27.6,
+      "peak_disk_mb": 911.6,
+      "final_wav_mb": 908.4,
+      "block_out_mb": 987.0
+    },
+    "long1h": {
+      "scenario": "long1h",
+      "audio_seconds": 3600,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 92.06,
+      "per_job_s": 92.06,
+      "realtime_factor": 39.1,
+      "cpu_s": 91.41,
+      "cpu_utilisation": 0.99,
+      "processes_spawned": 6,
+      "processes_per_job": 6.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 67.1
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 0.8
+        },
+        "ffmpeg:loudnorm-analysis": {
+          "calls": 1,
+          "ms": 81134.1
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 40.4
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 10362.2
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 34.1
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 316.5
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 68.3
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.0
+        }
+      },
+      "store_updates": 67,
+      "store_update_total_ms": 48.4,
+      "ffmpeg_peak_rss_mb": 108.2,
+      "python_peak_rss_mb": 27.4,
+      "peak_disk_mb": 964.1,
+      "final_wav_mb": 908.4,
+      "block_out_mb": 965.7
+    },
+    "long1h-nonorm": {
+      "scenario": "long1h-nonorm",
+      "audio_seconds": 3600,
+      "jobs": 1,
+      "all_done": true,
+      "wall_s": 4.83,
+      "per_job_s": 4.83,
+      "realtime_factor": 745.8,
+      "cpu_s": 4.28,
+      "cpu_utilisation": 0.89,
+      "processes_spawned": 5,
+      "processes_per_job": 5.0,
+      "stage_ms_totals": {
+        "yt-dlp(stub: copy + progress lines)": {
+          "calls": 1,
+          "ms": 87.8
+        },
+        "finalize-download": {
+          "calls": 1,
+          "ms": 1.0
+        },
+        "ffprobe:sample-rate": {
+          "calls": 1,
+          "ms": 63.7
+        },
+        "ffmpeg:encode-wav": {
+          "calls": 1,
+          "ms": 4079.8
+        },
+        "ffprobe:validate": {
+          "calls": 1,
+          "ms": 39.6
+        },
+        "fsync-wav": {
+          "calls": 1,
+          "ms": 437.3
+        },
+        "ffmpeg:thumbnail": {
+          "calls": 1,
+          "ms": 79.9
+        },
+        "atomic-commit": {
+          "calls": 3,
+          "ms": 0.0
+        }
+      },
+      "store_updates": 66,
+      "store_update_total_ms": 66.9,
+      "ffmpeg_peak_rss_mb": 53.5,
+      "python_peak_rss_mb": 27.2,
+      "peak_disk_mb": 964.1,
+      "final_wav_mb": 908.4,
+      "block_out_mb": 965.6
+    }
+  },
+  "cancel": {
+    "download": [
+      {
+        "kind": "download",
+        "process_dead_ms": 2.7,
+        "worker_returned_ms": 2.8,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "download",
+        "process_dead_ms": 2.8,
+        "worker_returned_ms": 4.9,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "download",
+        "process_dead_ms": 2.0,
+        "worker_returned_ms": 3.5,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "download",
+        "process_dead_ms": 2.4,
+        "worker_returned_ms": 2.6,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "download",
+        "process_dead_ms": 2.2,
+        "worker_returned_ms": 2.8,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      }
+    ],
+    "analysis": [
+      {
+        "kind": "analysis",
+        "process_dead_ms": 5.9,
+        "worker_returned_ms": 6.9,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "analysis",
+        "process_dead_ms": 6.4,
+        "worker_returned_ms": 7.8,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "analysis",
+        "process_dead_ms": 6.0,
+        "worker_returned_ms": 6.1,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "analysis",
+        "process_dead_ms": 5.4,
+        "worker_returned_ms": 6.7,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      },
+      {
+        "kind": "analysis",
+        "process_dead_ms": 7.7,
+        "worker_returned_ms": 9.8,
+        "state": "canceled",
+        "orphan_children": 0,
+        "cache_dir_left": false,
+        "temp_files_left": []
+      }
+    ],
+    "retry_backoff_seconds": [
+      5,
+      15
+    ]
+  },
+  "_payload_sha256": "55ff44338dd1c7c1606f0f0445ed9c5aa94f95e5e1a44cb2b185503317d7ce89"
+}
