@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brave Music Downloader — Dashboard</title><link rel="stylesheet" href="dashboard.css"></head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand"><div class="mark">♫</div><div><strong>BRAVE MUSIC</strong><small>Studio · <span id="appVersion"></span></small></div></div>
+    <nav aria-label="Main navigation">
+      <button class="nav active" data-page="overview">◫ &nbsp;Overview</button>
+      <button class="nav" data-page="downloads">↓ &nbsp;Download queue</button>
+      <button class="nav" data-page="import">☷ &nbsp;Playlist import</button>
+      <button class="nav" data-page="settings">⚙ &nbsp;Audio settings</button>
+      <button class="nav" data-page="diagnostics">✚ &nbsp;Diagnostics</button>
+    </nav>
+    <div class="sidefoot"><div class="connection"><span class="signal" id="signal"></span><span id="connection">Checking helper</span></div><small>Local native-messaging connection</small></div>
+  </aside>
+  <main>
+    <header><div><div class="eyebrow">YOUR LOCAL MUSIC STUDIO</div><h1 id="heading">Overview</h1></div><button class="subtle" id="refresh">↻ Refresh</button></header>
+    <section id="page-overview" class="page">
+      <div class="stats">
+        <div class="stat"><span>Active jobs</span><strong id="statActive">—</strong><small>Queued + processing</small></div>
+        <div class="stat"><span>Completed</span><strong id="statDone">—</strong><small>Tracks saved</small></div>
+        <div class="stat"><span>Errors</span><strong id="statError">—</strong><small>Jobs needing attention</small></div>
+        <div class="stat"><span>Canceled</span><strong id="statCanceled">—</strong><small>Stopped manually</small></div>
+      </div>
+      <div class="columns">
+        <section class="panel"><h2>Quick download</h2><p>Add a permitted YouTube video link. The format and processing options come from the settings page.</p>
+          <label for="singleUrl">Video URL</label><input type="url" id="singleUrl" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+          <button class="primary" id="singleAdd">＋ Add to queue</button><div class="status" id="singleStatus" role="status"></div>
+        </section>
+        <section class="panel"><h2>Audio profile</h2><div class="profile"><div class="disc" id="profileBits">24</div><div><strong id="profileFormat">24-bit PCM WAV</strong><p id="profileNote">Uncompressed and lossless: the largest files. The cover is saved next to the track as a .cover.jpg file.</p><small>Optional 2-pass EBU R128 loudness normalization · −16 LUFS • −1.5 dBTP</small></div></div>
+          <div class="rule"></div><p>No export can restore quality that the YouTube source does not have. Change the format under Audio settings.</p>
+          <button class="subtle" id="goSettings">Configure options</button>
+        </section>
+      </div>
+      <section class="panel"><div class="sectionhead"><h2>Recent activity</h2><button class="subtle" id="goQueue">View full queue</button></div><div id="recent" class="joblist"></div></section>
+    </section>
+    <section id="page-downloads" class="page" hidden>
+      <section class="panel"><div class="sectionhead"><div><h2>Download queue</h2><p>Persistent queue, status, retries and cancel controls</p></div><button class="subtle" id="clearFinished">Clear finished</button></div>
+        <div class="filters" role="group" aria-label="Filter jobs"><button class="filter active" data-filter="all">All</button><button class="filter" data-filter="active">Active</button><button class="filter" data-filter="done">Done</button><button class="filter" data-filter="error">Errors</button><button class="filter" data-filter="canceled">Canceled</button></div>
+        <div id="downloadList" class="joblist"></div><button class="subtle" id="loadMore" hidden>Load more</button><div class="status" id="queueStatus" role="status"></div>
+      </section>
+    </section>
+    <section id="page-import" class="page" hidden>
+      <section class="panel"><h2>Playlist importer</h2><p>Preview up to 200 tracks, select the ones you want, and add them to your download queue.</p>
+        <label for="playlistUrl">YouTube / YouTube Music playlist URL</label><div class="inputrow"><input type="url" id="playlistUrl" placeholder="https://www.youtube.com/playlist?list=..."><button class="primary inline" id="preview">Preview</button></div>
+        <div class="status" id="importStatus" role="status"></div>
+        <div id="playlistPreview" hidden><div class="sectionhead"><h3 id="playlistName">Playlist</h3><label class="pickall"><input type="checkbox" id="selectAll" checked> Select all</label></div>
+          <p id="selectedCount"></p><div id="previewItems" class="previewlist"></div><button class="primary" id="importSelected">＋ Add selected tracks</button>
+        </div></section>
+    </section>
+    <section id="page-settings" class="page" hidden>
+      <section class="panel"><h2>Audio preferences</h2><p>Settings are shared with the Brave popup, page button and keyboard shortcut.</p>
+        <div class="settingsgrid">
+          <label class="setting setting-wide"><span><b>Output format</b><small>Embedded metadata, BPM and artwork are written into the file for all formats</small></span>
+            <select id="format" class="select">
+              <option value="wav">WAV · 24-bit PCM (lossless)</option>
+              <option value="flac">FLAC · 24-bit (lossless, ~50% smaller)</option>
+              <option value="mp3">MP3 · 320 kbps (compatible)</option>
+            </select>
+          </label>
+        </div>
+        <button id="advancedToggle" class="advanced-toggle" aria-expanded="false" aria-controls="advancedSettings">
+          <span class="caret">▸</span> Advanced options
+        </button>
+        <div id="advancedSettings" class="advanced-settings" hidden>
+          <div class="settingsgrid">
+            <label class="setting"><span><b>Embed metadata</b><small>Tags + BPM + cover art inside the file</small></span><input type="checkbox" id="metadata" checked></label>
+            <label class="setting"><span><b>Normalize loudness</b><small>Two-pass −16 LUFS, −1.5 dBTP</small></span><input type="checkbox" id="normalize" checked></label>
+            <label class="setting"><span><b>MusicBrainz matching</b><small>Conservative track/release matching</small></span><input type="checkbox" id="musicbrainz" checked></label>
+            <label class="setting"><span><b>Download artwork</b><small>Embedded for FLAC/MP3; a .cover.jpg file next to the track for WAV</small></span><input type="checkbox" id="artwork" checked></label>
+            <label class="setting"><span><b>Organize library</b><small>Artist / Album or Singles / Track</small></span><input type="checkbox" id="organize" checked></label>
+            <label class="setting"><span><b>Trim leading silence</b><small>Off by default to protect musical intros</small></span><input type="checkbox" id="trim_start"></label>
+            <label class="setting"><span><b>Desktop notifications</b><small>Reports completed and failed jobs</small></span><input type="checkbox" id="notifications" checked></label>
+          </div>
+        </div>
+        <div class="status" id="settingsStatus" role="status">Changes save automatically.</div>
+      </section>
+    </section>
+    <section id="page-diagnostics" class="page" hidden>
+      <section class="panel"><div class="sectionhead"><h2>Installation health</h2><button id="checkDependencies" class="primary inline">Run checks</button></div>
+        <p>The helper is registered using Native Messaging, restricted to this extension ID. No localhost server or access token is used.</p>
+        <div class="meta"><div>Connection</div><strong id="diagnosticConnection">Checking…</strong><div>Save folder</div><strong id="outputPath">—</strong></div>
+        <div class="tools" id="tools"></div><p class="status" id="diagStatus" role="status"></p>
+        <p>To repair missing tools or the helper registration, run the Brave Music Downloader setup again; it keeps your music, settings and history. Then reload the extension in Brave.</p>
+      </section>
+    </section>
+    <footer>Download only content you own or have permission to save. MusicBrainz matching sends track titles and artist names to a third-party service when enabled.</footer>
+  </main>
+</div>
+<script src="poller.js"></script>
+<script src="dashboard.js"></script>
+</body></html>
