@@ -1,0 +1,17 @@
+#brave-music-download-wav {
+  font: 700 12px/1.15 Arial, sans-serif !important;
+  color: #f0f6ff !important;
+  background: linear-gradient(120deg,#2868d5,#6235ac) !important;
+  border: 1px solid #7f97e6 !important;
+  border-radius: 22px !important;
+  padding: 9px 13px !important;
+  min-width: 76px !important;
+  min-height: 30px !important;
+  cursor: pointer !important;
+  margin: 0 8px !important;
+  white-space: nowrap !important;
+  z-index: 2;
+  align-self: center;
+}
+#brave-music-download-wav:hover { filter: brightness(1.13) !important; }
+#brave-music-download-wav:disabled { opacity: .7 !important;cursor:wait !important; }

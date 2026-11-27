@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brave Music Downloader</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <div class="logo">♫</div>
+    <div><h1>Brave Music</h1><small>Studio <span class="version" id="appVersion"></span> · WAV · FLAC · MP3</small></div>
+    <div id="connected" class="dot" title="Helper disconnected"></div>
+  </header>
+
+  <nav class="tabs" aria-label="Downloader mode">
+    <button class="tab active" data-tab="track" aria-pressed="true">Track</button>
+    <button class="tab" data-tab="playlist" aria-pressed="false">Playlist</button>
+    <button class="tab" data-tab="queue" aria-pressed="false">Queue <span id="queueCount" class="count">0</span></button>
+  </nav>
+
+  <section id="pane-track" class="pane">
+    <div class="subheading">CURRENT YOUTUBE TRACK</div>
+    <div class="track-card"><div class="art">♫</div><div id="track" class="track-title">Checking active tab…</div></div>
+    <button id="enqueueTrack" class="primary" disabled>＋ Add to queue</button>
+    <div id="trackStatus" class="hint" role="status"></div>
+  </section>
+
+  <section id="pane-playlist" class="pane" hidden>
+    <div class="subheading">PLAYLIST IMPORT</div>
+    <label for="playlistUrl" class="field-label">YouTube / YouTube Music playlist URL</label>
+    <div class="url-row"><input id="playlistUrl" type="url" placeholder="Paste playlist link" spellcheck="false"><button id="preview" class="secondary short">Preview</button></div>
+    <div id="playlistStatus" class="hint" role="status">Preview up to 200 tracks, then choose which to save.</div>
+    <div id="previewArea" hidden>
+      <div class="preview-head"><strong id="playlistTitle">Playlist</strong><span id="selectedCount" class="hint"></span></div>
+      <label class="selectall"><input type="checkbox" id="selectAll" checked> Select all tracks</label>
+      <div id="playlistItems" class="playlist-items"></div>
+      <button id="enqueueSelected" class="primary" disabled>＋ Add selected to queue</button>
+    </div>
+  </section>
+
+  <section id="pane-queue" class="pane" hidden>
+    <div class="queue-header"><div><div class="subheading">DOWNLOAD QUEUE</div><div id="counts" class="hint">Loading…</div></div><button id="clear" class="ghost" title="Clear finished, failed, and canceled job history">Clear finished</button></div>
+    <div id="jobList" class="jobs"></div>
+    <div id="queueStatus" class="hint" role="status"></div>
+  </section>
+
+  <section class="settings">
+    <div class="settings-title">OUTPUT FORMAT</div>
+    <label class="field-row" for="format">
+      <select id="format" class="select">
+        <option value="wav">WAV · 24-bit PCM (lossless)</option>
+        <option value="flac">FLAC · 24-bit (lossless, ~50% smaller)</option>
+        <option value="mp3">MP3 · 320 kbps (compatible)</option>
+      </select>
+    </label>
+    <button id="advancedToggle" class="advanced-toggle" aria-expanded="false" aria-controls="advancedSettings">
+      <span class="caret">▸</span> Advanced options
+    </button>
+    <div id="advancedSettings" class="advanced-settings" hidden>
+      <div class="settings-title">METADATA & PROCESSING <span>embedded in the file</span></div>
+      <label class="toggle"><span><strong>Embed metadata</strong><small>Tags + BPM + cover art inside the file</small></span><input id="metadata" type="checkbox" checked></label>
+      <label class="toggle"><span><strong>Normalize loudness</strong><small>EBU R128 · −16 LUFS · −1.5 dBTP</small></span><input id="normalize" type="checkbox" checked></label>
+      <label class="toggle"><span><strong>Match MusicBrainz metadata</strong><small>Conservative matching, falls back to source tags · queries MusicBrainz online</small></span><input id="musicbrainz" type="checkbox" checked></label>
+      <label class="toggle"><span><strong>Save cover artwork</strong><small>Embedded for FLAC/MP3; a .cover.jpg file next to the track for WAV</small></span><input id="artwork" type="checkbox" checked></label>
+      <label class="toggle"><span><strong>Organize music library</strong><small>Artist / Album (or Singles) / Track</small></span><input id="organize" type="checkbox" checked></label>
+      <label class="toggle"><span><strong>Trim leading silence</strong><small>Optional; off by default to protect quiet musical intros</small></span><input id="trim_start" type="checkbox"></label>
+      <label class="toggle"><span><strong>Desktop notifications</strong><small>Queue results while the popup is closed; checked every minute</small></span><input id="notifications" type="checkbox" checked></label>
+    </div>
+  </section>
+
+  <section class="connection-panel">
+    <div class="settings-title">NATIVE CONNECTION</div>
+    <div id="hostStatus" class="hint" role="status">Checking native helper…</div>
+    <div class="url-row"><button id="checkHost" class="secondary">Check connection</button><button id="openDashboard" class="primary">Full dashboard</button></div>
+    <p class="hint">First-time setup: run the <b>Brave Music Downloader setup</b>, then load the extension folder it shows in Brave. No token or manual helper window required.</p>
+  </section>
+  <div class="keyboard-hint">Page button · Right-click · <kbd>Alt+Shift+M</kbd> (customize via brave://extensions/shortcuts)</div>
+  <footer>Only save tracks you’re permitted to download. Lossless exports cannot restore the source’s compressed quality. MusicBrainz queries share the track title and artist when enabled.</footer>
+  <script src="popup.js"></script>
+</body>
+</html>

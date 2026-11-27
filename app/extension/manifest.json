@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "Brave Music Downloader",
+  "version": "2.5.0",
+  "description": "Native messaging-powered music download queue with a choice of WAV, FLAC or MP3, embedded metadata and artwork, and a dashboard, for authorized YouTube content.",
+  "minimum_chrome_version": "110",
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "notifications",
+    "alarms",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://music.youtube.com/*",
+    "https://m.youtube.com/*",
+    "https://youtube.com/*",
+    "https://youtu.be/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://music.youtube.com/*",
+        "https://m.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "queue-current-wav": {
+      "suggested_key": {
+        "default": "Alt+Shift+M"
+      },
+      "description": "Queue the current YouTube track"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Brave Music Downloader",
+    "default_popup": "popup.html"
+  },
+  "options_page": "dashboard.html",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx7yIdEImwiOCAPa1lBfS9UqM6wOVXGY4DatOr3wZhVgBPTMIExDY8J9bvaNrpF6SNum0qBE6O0kRS4FfzXtK/ZeU2JfgczYiNMSVrK8eL/7L5dy3nSw/Z6A5QAUYwjZEzQkLBwW9u36gQb+xOMlMP2KhSx3yU+yXbhLe/a+5RpH7XKkTRWKbsxAzMM5sItWWV1H5lrp9CDOB/ecyGO9KH5ki1lWeIWuc1Y00BWh5p6llymhf8w3QCe+v4VphdATrSbdi+/QprRIeZDWGhIHuH9HyefuRxAgkgqffeR6j/lBEMU8VWePJtwCk7dc8x/PFPHtLmQKCzC9lcFALiCiZhQIDAQAB"
+}
