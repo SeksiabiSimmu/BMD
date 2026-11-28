@@ -94,10 +94,10 @@ def collect(source):
         for path in files:
             parts = set(path.relative_to(source).parts)
             if parts & FORBIDDEN_DIRS:
-                raise ReleaseError(f'Build debris in payload: {path.relative_to(source)} '
+                raise ReleaseError(f'Build debris in payload: {path.relative_to(source).as_posix()} '
                                    '(delete the __pycache__ folders, or run the tests with PYTHONDONTWRITEBYTECODE=1)')
             if path.suffix.lower() in FORBIDDEN_SUFFIXES:
-                raise ReleaseError(f'Binary files must not be bundled: {path.relative_to(source)}')
+                raise ReleaseError(f'Binary files must not be bundled: {path.relative_to(source).as_posix()}')
             if not listed and path.relative_to(source).as_posix().startswith(NOT_INSTALLED):
                 continue
             name = dest if listed else f'{dest}/{path.relative_to(base).as_posix()}'
@@ -196,10 +196,17 @@ def check_content(entries, source):
             if path.suffix == '.py':
                 ast.parse(path.read_text(encoding='utf-8'), filename=name)
             if path.suffix in TEXT_SUFFIXES:
-                text = path.read_text(encoding='utf-8')
+                # Read bytes and decode: read_text's universal newlines would hide a CRLF file
+                # from the CR check below (the gate missed exactly that on a Windows checkout).
+                text = path.read_bytes().decode('utf-8')
         except (SyntaxError, UnicodeDecodeError) as exc:
             raise ReleaseError(f'{name}: is not valid text: {exc}') from None
         if text is not None:
+            # LF-only payloads keep the release byte-identical across platforms (.gitattributes
+            # pins eol=lf; this gate catches a file that slipped through on a Windows checkout).
+            if '\r' in text:
+                raise ReleaseError(f'{name}: contains CR line endings; the payload must be LF only '
+                                   '(a Windows checkout must not leak CRLF into the release)')
             for phrase in STALE_PHRASES:
                 if phrase in text:
                     raise ReleaseError(f'{name}: contains stale text "{phrase}"')

@@ -526,7 +526,7 @@ Check 'download-verified' {
     Get-VerifiedDownload -Url $url -Destination $destination -Sha256 $urlHash -Report $report -Pump { }
     Assert (Test-Path -LiteralPath $destination -PathType Leaf) 'the file is there'
     Assert-Same $urlHash (Get-FileSha256 $destination) 'and it is the file that was expected'
-    Assert-Same $urlHash (Get-FileSha256 (New-Object System.Uri($url)).LocalPath) '...which is what the server has'
+    Assert-Same $urlHash (Get-FileSha256 $env:BMD_TEST_FILE) '...which is what the server has'
     Assert-Same 'component, downloaded' (@($events | ForEach-Object { $_.event }) -join ', ') 'the events a display gets'
     Assert-Same (Get-Item -LiteralPath $destination).Length $events[1].bytes 'the size was reported'
     # A file that is already there and correct is not downloaded again.
@@ -1037,6 +1037,27 @@ Check 'work-logs-outcome' {
         Assert ($text -match 'Nothing is installed; nothing to remove') 'the reason for exit code 9 is in the log'
         Assert ($text -match 'Brave: not found') 'and what was found out about the browser'
     } finally { $script:LogFile = '' }
+}
+
+Check 'work-cleanup' {
+    # What the script filled during the run is emptied at the end, so the setup program's
+    # RemoveDirectory succeeds (found on a real Windows PC: the work folder survived).
+    $folder = New-Folder 'work-cleanup'
+    foreach ($sub in 'engine\installer', 'python') {
+        New-Item -ItemType Directory -Force -Path (Join-Path $folder $sub) | Out-Null
+    }
+    foreach ($file in 'engine\installer\installer_core.py', 'python\python.exe', 'python-download.zip',
+                     'progress.jsonl', 'result.json', 'cancel') {
+        [System.IO.File]::WriteAllText((Join-Path $folder $file), 'x')
+    }
+    [System.IO.File]::WriteAllText((Join-Path $folder 'Setup.ps1'), 'kept')
+    [System.IO.File]::WriteAllText((Join-Path $folder 'Application.zip'), 'kept')
+    Remove-SetupWork -Work $folder
+    $left = @(Get-ChildItem -LiteralPath $folder -Force | ForEach-Object { $_.Name } | Sort-Object)
+    Assert-Same 'Application.zip, Setup.ps1' ($left -join ', ') 'only the two bootstrap files are left for the setup program'
+    Assert-Same 'kept' (Get-Content -LiteralPath (Join-Path $folder 'Setup.ps1') -Raw) 'the running script itself is untouched'
+    Remove-SetupWork -Work ''                                             # no folder: no error
+    Remove-SetupWork -Work (Join-Path $folder 'gone')                     # a missing folder: no error
 }
 
 # ==== Setup.ps1: the entry point in a child process ==========================================

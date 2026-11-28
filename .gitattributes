@@ -1,2 +1,8 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Every text file is stored with LF line endings, in the working tree too. The release build
+# packs payload files exactly as they sit in the tree, and the shipped artifacts must be
+# byte-identical no matter which platform builds them (docs/RELEASE.md): a Windows checkout
+# must not turn the payload into CRLF. The LF scripts are what setup runs on Windows
+# PowerShell 5.1, which reads LF text correctly.
+* text=auto eol=lf
+*.png binary
+*.ico binary

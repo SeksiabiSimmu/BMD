@@ -11,7 +11,8 @@ import time
 import unittest
 from pathlib import Path
 
-from support import calls, ffprobe_json, make_tools, set_mode, tmpdir
+from support import (calls, fake_tool_file, ffprobe_json, make_launchable_tool, make_tools,
+                     set_mode, tmpdir, tool_data_file)
 
 import bmdfs
 import helper
@@ -106,6 +107,11 @@ class UrlTests(unittest.TestCase):
     def test_canonical(self):
         self.assertEqual(helper.canonical_video('https://youtu.be/' + VID), 'https://www.youtube.com/watch?v=' + VID)
         self.assertEqual(helper.canonical_video('https://www.youtube.com/shorts/' + VID),
+                         'https://www.youtube.com/watch?v=' + VID)
+        # A timestamp fragment is dropped, not refused: the canonical URL is built from the id.
+        self.assertEqual(helper.canonical_video('https://www.youtube.com/watch?v=' + VID + '&t=42s#start'),
+                         'https://www.youtube.com/watch?v=' + VID)
+        self.assertEqual(helper.canonical_video('https://youtu.be/' + VID + '#t=30'),
                          'https://www.youtube.com/watch?v=' + VID)
         for bad in ('http://youtu.be/' + VID, 'https://evil.com/watch?v=' + VID,
                     'https://www.youtube.com:444/watch?v=' + VID, 'https://user@youtu.be/' + VID, None):
@@ -322,7 +328,7 @@ class PipelineTests(Base):
         ident = self.enqueue()
         work = helper.job_cache_dir(ident)
         work.mkdir()
-        subprocess.run([str(self.tools / 'yt-dlp'), '-o', str(work / 'source.%(ext)s'), 'https://x/watch?v=' + VID],
+        subprocess.run([str(fake_tool_file(self.tools)), '-o', str(work / 'source.%(ext)s'), 'https://x/watch?v=' + VID],
                        check=True, capture_output=True)
         helper.finalize_download(work)
         self.assertEqual(len(calls(self.state)), 1)
@@ -349,7 +355,7 @@ class PipelineTests(Base):
         self.assertIn('503', job['message'])
 
     def test_missing_tool_and_low_disk_are_permanent(self):
-        (self.tools / 'yt-dlp').unlink()
+        fake_tool_file(self.tools).unlink(missing_ok=True)
         path_backup = os.environ['PATH']
         os.environ['PATH'] = str(self.tmp)
         try:
@@ -450,9 +456,7 @@ class ProgressThrottleTests(Base):
     """Phase 2: progress ticks are coalesced, but the first and last tick and all state changes are kept."""
 
     def make_noisy_tool(self, lines, sleep_s=0.0, fail=False):
-        script = self.tools / 'yt-dlp'
-        script.write_text(f"""#!{sys.executable}
-import sys, time, json
+        body = f"""import sys, time, json
 from pathlib import Path
 args = sys.argv[1:]
 work = Path(args[args.index('-o') + 1]).parent
@@ -462,8 +466,8 @@ for i in range({lines}):
 {'sys.exit(1)' if fail else ''}
 (work / 'source.m4a').write_bytes(b'x' * 100)
 (work / 'source.info.json').write_text(json.dumps({{'id': 'x'}}))
-""")
-        script.chmod(0o755)
+"""
+        make_launchable_tool(self.tools, body)
 
     def run_stream(self):
         ident = self.ident = self.enqueue()
@@ -763,6 +767,47 @@ class StoreConcurrencyTests(Base):
         self.assertEqual((len(seen), len(set(seen))), (len(rows), len(rows)))
 
 
+class WorkerLoopTests(Base):
+    """A transient store error (a locked database, say) must not end the worker thread silently:
+    the host would stay up and never process another job."""
+
+    def test_a_store_error_does_not_kill_the_worker(self):
+        ident = self.enqueue()
+        state = {'raised': False}
+
+        class FlakyStore:
+            def __init__(self, store):
+                self.store = store
+
+            def next_queued(self):
+                if not state['raised']:
+                    state['raised'] = True
+                    raise sqlite3.OperationalError('database is locked (test)')
+                return self.store.next_queued()
+
+            def __getattr__(self, name):
+                return getattr(self.store, name)
+
+        restored = helper.STORE
+        helper.STORE = FlakyStore(self.store)
+        worker = threading.Thread(target=helper.worker_loop, daemon=True)
+        try:
+            worker.start()
+            deadline = time.time() + 30
+            while time.time() < deadline:
+                job = self.store.get(ident)
+                if job and job['state'] == 'done':
+                    break
+                time.sleep(0.05)
+        finally:
+            helper.WAKE.set()
+            helper.STORE = restored
+            worker.join(5)
+        self.assertTrue(state['raised'], 'the fault was injected')
+        self.assertEqual(self.store.get(ident)['state'], 'done',
+                         'the worker kept going after the store error')
+
+
 class MaintenanceTests(Base):
     def test_sweep_cache_only_removes_what_it_owns(self):
         done, running, err_old, err_new = (self.enqueue('v%010d' % i) for i in range(4))
@@ -906,7 +951,7 @@ class NativeHostTests(Base):
 class DeepHashTests(Base):
     def setUp(self):
         super().setUp()
-        self.big = self.tools / 'ffmpeg'
+        self.big = tool_data_file(self.tools, 'ffmpeg')   # only hashed here, never launched
         self.big.write_bytes(os.urandom(2 ** 20) * 48)                  # 48 MB stand-in for a tool
 
     def manifest(self, **extra):

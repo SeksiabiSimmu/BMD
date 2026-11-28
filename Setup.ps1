@@ -906,6 +906,18 @@ function Invoke-Gui {
     return $code
 }
 
+# The work folder the script itself filled (the unpacked engine, the downloaded Python, the
+# progress files): emptied at the end so the setup program can remove the folder. The two
+# bootstrap files stay for the launcher to delete; whatever cannot be removed now (a file still
+# open, an antivirus hold) is swept the next time setup runs (Remove-StaleWorkFolders).
+function Remove-SetupWork([string]$Work) {
+    if (-not $Work) { return }
+    foreach ($entry in @(Get-ChildItem -LiteralPath $Work -Force -ErrorAction SilentlyContinue)) {
+        if ($entry.Name -eq 'Setup.ps1' -or $entry.Name -eq 'Application.zip') { continue }
+        try { Remove-Item -LiteralPath $entry.FullName -Recurse -Force -ErrorAction Stop } catch { }
+    }
+}
+
 # ---- entry point ------------------------------------------------------------------------
 
 function New-SetupContext([string]$Root, [string]$Work, [string]$Mode, [string]$Action) {
@@ -966,6 +978,7 @@ function Invoke-Main {
             Show-ErrorMessage 'Brave Music Downloader Setup' ((Get-ExitText $code) + "`n`n" + $message + "`n`nLog: " + $script:LogFile)
         }
     }
+    Remove-SetupWork -Work $work
     Write-Log "Exit code $code"
     exit $code
 }

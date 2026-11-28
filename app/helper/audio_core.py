@@ -10,11 +10,9 @@ All three formats embed the textual tags and the cover art *inside* the file:
     `.cover.jpg` (as before) — embedding a picture in a RIFF `LIST/INFO` chunk is
     non-portable and most players ignore it.
 
-BPM is detected with FFmpeg's `ebur128`-independent `astats`/`freeverb` is not suitable;
-instead we run a tiny ffmpeg pass that prints the `loudnorm`-style measurement is not BPM.
-We detect BPM with a small autocorrelation over the decoded mono PCM, which needs no extra
-tool: we decode ~30s of mono to a pipe and compute the dominant periodicity. The value is
-written into the file as a `TBPM` (FLAC/MP3) tag and into the JSON sidecar.
+BPM is detected without an extra tool: up to 30 s are decoded to mono PCM on a pipe and a
+pure-Python autocorrelation of the RMS envelope estimates the dominant periodicity. The
+value is written into the file as a `TBPM` (FLAC/MP3) tag and into the JSON sidecar.
 """
 import json
 import math

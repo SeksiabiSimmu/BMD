@@ -285,3 +285,45 @@ test('an unrecognized stored format falls back to WAV instead of failing the enq
   assert.equal(posted.params.format, 'wav', 'unknown stored values fall back to wav');
   assert.match(reply.message, /WAV/);
 });
+
+test('a URL with a timestamp fragment is queued by its video id instead of being refused', async () => {
+  // Regression: canonicalVideo refused any URL with a #fragment, although the popup's own check
+  // accepted it, so "watch?v=<id>&t=42s#start" (a link copied from the address bar) failed with
+  // "Open a supported YouTube video". The canonical URL is built from the validated id alone.
+  // (youtu.be is not a content-script host; its fragment handling is covered by the helper's
+  // URL tests and by canonicalVideo's id extraction, tested here through the watch/shorts forms.)
+  const enqueueFrom = async (pageUrl) => {
+    const h = harness({ behave: (port, m) => {
+      const data = m.method === 'enqueue'
+        ? { added: ['a'.repeat(32)], duplicate: [], existing: [] }
+        : { jobs: [], counts: {}, next_cursor: null };
+      queueMicrotask(() => port.deliver({ id: m.id, ok: true, data }));
+    } });
+    await sleep(20);
+    const reply = await new Promise((resolve) => {
+      const keep = h.listeners.message(
+        { type: 'BMD_ENQUEUE_CURRENT', title: 'A Song' },
+        { id: 'ext-id', url: pageUrl, tab: { title: 'Tab title' } }, resolve);
+      if (keep !== true) resolve('rejected');
+    });
+    return { reply, posted: h.sent.filter((m) => m.method === 'enqueue').pop() };
+  };
+  const canonical = 'https://www.youtube.com/watch?v=abcdefghijk';
+  for (const pageUrl of [canonical + '&t=42s#start', canonical + '#start',
+                        'https://www.youtube.com/shorts/abcdefghijk#']) {
+    const { reply, posted } = await enqueueFrom(pageUrl);
+    assert.equal(reply.added, 1, pageUrl + ' is queued: ' + JSON.stringify(reply));
+    assert.equal(posted.params.url, canonical, 'the helper receives the id, never the fragment');
+  }
+  // A malformed video id on a real watch page fails with the honest message.
+  const bad = await enqueueFrom('https://www.youtube.com/watch?v=not-a-video-id#t=1');
+  assert.match(String(bad.reply.error), /Open a supported YouTube video/);
+  assert.equal(bad.posted, undefined, 'nothing reached the helper');
+  // Senders the extension must not act for are ignored (no response at all).
+  for (const pageUrl of ['https://www.youtube.com.evil.example/watch?v=abcdefghijk',
+                        'https://www.youtube.com:444/watch?v=abcdefghijk']) {
+    const { reply, posted } = await enqueueFrom(pageUrl);
+    assert.equal(reply, 'rejected', pageUrl + ' is not served');
+    assert.equal(posted, undefined, 'and nothing reaches the helper');
+  }
+});

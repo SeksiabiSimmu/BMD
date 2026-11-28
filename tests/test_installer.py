@@ -61,13 +61,16 @@ class FsSafetyTests(unittest.TestCase):
         self.assertTrue((self.outside / 'precious.txt').exists())
 
     def test_boundaries_hold_with_spaces_non_ascii_trailing_dots_and_symlink_loops(self):
-        weird = self.box / 'Álbum  ñ 日本語 (x) ' / 'sub . folder'
+        # NTFS refuses a component with a trailing space, so that part is POSIX-only;
+        # the non-ASCII text, the inner spaces and the inner dots stay in both names.
+        stem = 'Álbum  ñ 日本語 (x)' + ('' if os.name == 'nt' else ' ')
+        weird = self.box / stem / 'sub . folder'
         weird.mkdir(parents=True)
         (weird / 'f ü.txt').write_text('x')
-        os.symlink(self.box / 'Álbum  ñ 日本語 (x) ', weird / 'loop')          # a link back up the tree
+        os.symlink(self.box / stem, weird / 'loop')          # a link back up the tree
         os.symlink(self.outside, weird / 'to outside')
-        bmdfs.safe_rmtree(self.box / 'Álbum  ñ 日本語 (x) ', self.box)
-        self.assertFalse((self.box / 'Álbum  ñ 日本語 (x) ').exists())
+        bmdfs.safe_rmtree(self.box / stem, self.box)
+        self.assertFalse((self.box / stem).exists())
         self.assertEqual((self.outside / 'precious.txt').read_text(), 'keep')
         inside = self.box / 'dir with space'
         inside.mkdir()
@@ -448,8 +451,16 @@ class HostCheckInstallTests(InstallBase):
 
     def make_launcher(self):
         host = ROOT / 'app' / 'helper' / 'native_host.py'
-        self.layout.launcher.write_text(f'#!/bin/sh\nexec {sys.executable} {host}\n')
-        self.layout.launcher.chmod(self.layout.launcher.stat().st_mode | stat.S_IEXEC)
+        if os.name == 'nt':
+            # Windows cannot run a shell script: build the real bridge the way setup builds it
+            # (with the .NET Framework that ships with Windows) and let it start this interpreter.
+            ic.build_launcher_windows(str(ROOT / 'app' / 'bridge' / 'NativeLauncher.cs'),
+                                      str(self.layout.launcher))
+            (self.layout.app / 'bridge' / 'host-paths.txt').write_text(f'{sys.executable}\n{host}\n',
+                                                                       encoding='utf-8')
+        else:
+            self.layout.launcher.write_text(f'#!/bin/sh\nexec {sys.executable} {host}\n')
+            self.layout.launcher.chmod(self.layout.launcher.stat().st_mode | stat.S_IEXEC)
 
     def test_hostcheck_explains_a_broken_setup_and_passes_a_working_one(self):
         env = {'BMD_INSTALL_ROOT': str(self.tmp / 'hostroot'), 'BMD_DATA_DIR': str(self.tmp / 'hostdata'),
@@ -534,7 +545,14 @@ class BusyFolderTests(InstallBase):
     def test_process_helpers_only_run_on_windows_and_never_splice_paths_into_the_script(self):
         with mock.patch('subprocess.run') as run:
             ic.stop_processes_under(self.tmp)
-            run.assert_not_called()
+            if ic.on_windows():
+                # Here the helper IS expected to run (it is the real platform); the data it
+                # protects still travels in the environment, never in the command line.
+                command, env = run.call_args[0][0], run.call_args[1]['env']
+                self.assertNotIn(str(self.tmp), ' '.join(command))
+                self.assertEqual(env['BMD_STOP_UNDER'], str(self.tmp))
+            else:
+                run.assert_not_called()
         self.assertEqual(ic.locking_processes(self.tmp), [])
         with mock.patch.object(ic, 'on_windows', return_value=True), mock.patch('subprocess.run') as run:
             ic.stop_processes_under(r"C:\Users\x'; Remove-Item C:\ -Recurse; '\app")
@@ -842,8 +860,10 @@ class InstallTests(InstallBase):
     def test_existing_system_tools_can_be_reused_and_are_not_owned(self):
         fake_bin = self.tmp / 'bin'
         fake_bin.mkdir()
-        (fake_bin / 'ffmpeg').write_text('x')
-        (fake_bin / 'ffmpeg').chmod(0o755)
+        fake = fake_bin / ('ffmpeg.exe' if os.name == 'nt' else 'ffmpeg')
+        fake.write_text('x')                       # shutil.which must find it; nothing runs it
+        if os.name != 'nt':
+            fake.chmod(0o755)
         with mock.patch.dict(os.environ, {'PATH': str(fake_bin)}):
             manifest = self.install(reuse_system=True)
         comps = {c['name']: c for c in manifest['components']}

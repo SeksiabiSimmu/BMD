@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import unittest
+from pathlib import Path
 
 from installer_support import Server, sha
 from support import ROOT, tmpdir
@@ -36,6 +37,23 @@ def powershell():
     return os.environ.get('BMD_TEST_PWSH') or shutil.which('pwsh')
 
 
+def child_python():
+    """An interpreter whose directory is a usable home.
+
+    The harness makes `app\\python` point at the interpreter's directory, so that directory must
+    work standalone. A virtualenv's python.exe needs the `pyvenv.cfg` in the venv root (one level
+    above the executable) — a directory junction hides it, and the child then dies with
+    "No pyvenv.cfg file". The base interpreter's directory always works.
+    """
+    exe = Path(sys.executable)
+    home = exe.parent
+    if (home / 'pyvenv.cfg').is_file() or list(home.glob('python3*.dll')) or (home / 'lib').is_dir():
+        return str(exe)
+    base = Path(sys.base_prefix)
+    candidate = base / ('python.exe' if os.name == 'nt' else 'bin/python3')
+    return str(candidate) if candidate.is_file() else str(exe)
+
+
 def run_harness(pwsh):
     """(exit code, output, error text) of one run of the harness with everything it can use."""
     folder = tmpdir()
@@ -50,14 +68,14 @@ def run_harness(pwsh):
         br.check_content(entries, source)
         payload = folder / 'Application.zip'
         br.build_zip(entries, payload)
-        # The harness reads the served file from disk through the URL's path, so the URL carries it.
         served = folder / 'served' / 'python.zip'
         served.parent.mkdir()
         served.write_bytes(b'PK\x03\x04' + os.urandom(64) * 300)
-        route = '/' + str(served).lstrip('/')
+        route = '/served/python.zip'
         server = Server({route: served.read_bytes()})
-        environment = dict(os.environ, BMD_TEST_PYTHON=sys.executable, BMD_TEST_PAYLOAD=str(payload),
-                           BMD_TEST_URL=server.base + route, BMD_TEST_SHA256=sha(served.read_bytes()),
+        environment = dict(os.environ, BMD_TEST_PYTHON=child_python(), BMD_TEST_PAYLOAD=str(payload),
+                           BMD_TEST_URL=server.base + route, BMD_TEST_FILE=str(served),
+                           BMD_TEST_SHA256=sha(served.read_bytes()),
                            BMD_TEST_TMP=str(folder / 'scratch'))
         environment.pop('TMPDIR', None)
         if os.name != 'nt':

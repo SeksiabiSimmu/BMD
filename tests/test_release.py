@@ -413,10 +413,12 @@ class ReleaseGateTests(unittest.TestCase):
         path = self.src / rel
         text = path.read_text(encoding='utf-8')
         self.assertIn(old, text, f'{rel} no longer contains {old!r}: the test would not test this gate')
-        path.write_text(text.replace(old, new), encoding='utf-8')
+        # LF bytes: on Windows write_text would write CRLF and the release's own CR gate would
+        # fire before the gate this test is about.
+        path.write_bytes(text.replace(old, new).replace('\r\n', '\n').encode('utf-8'))
 
     def write_json(self, rel, value):
-        (self.src / rel).write_text(json.dumps(value, indent=2), encoding='utf-8')
+        (self.src / rel).write_bytes(json.dumps(value, indent=2).encode('utf-8'))
 
     def test_clean_tree_passes_every_gate(self):
         self.assertEqual(br.check_versions(self.src), VERSION)
@@ -504,8 +506,20 @@ class ReleaseGateTests(unittest.TestCase):
 
     def test_blocks_non_ascii_powershell(self):
         path = self.src / 'Setup.ps1'
-        path.write_text(path.read_text(encoding='utf-8') + '\n# café\n', encoding='utf-8')
+        path.write_bytes(path.read_bytes() + '\n# café\n'.encode('utf-8'))
         self.assertIn('Setup.ps1: must be ASCII only', self.gate())
+
+    def test_blocks_crlf_in_the_payload(self):
+        # A Windows checkout must not leak CRLF into the release (.gitattributes pins eol=lf):
+        # CRLF payload files would not be byte-identical to the Linux-built release, and the
+        # first Windows build of this project silently shipped them (Setup.ps1 was 973 bytes
+        # larger than the published hash).
+        path = self.src / 'app/helper/paths.py'
+        path.write_bytes(path.read_bytes().replace(b'\n', b'\r\n'))
+        self.assertIn('helper/paths.py: contains CR line endings', self.gate())
+        # The restored, LF-only copy must pass: the content gate is what the build runs first.
+        path.write_bytes((ROOT / 'app/helper/paths.py').read_bytes())
+        br.check_content(br.collect(self.src), self.src)
 
     def test_blocks_a_python_file_that_does_not_parse(self):
         path = self.src / 'app/helper/paths.py'

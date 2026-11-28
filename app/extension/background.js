@@ -30,7 +30,9 @@ class HostError extends Error {
 function canonicalVideo(raw) {
   try {
     const u = new URL(raw);
-    if (u.protocol !== 'https:' || u.port || u.username || u.password || u.hash || !WATCH_HOSTS.has(u.hostname)) return null;
+    // A #fragment (a timestamp anchor) is dropped, not refused: the returned URL is built from
+    // the validated video id alone.
+    if (u.protocol !== 'https:' || u.port || u.username || u.password || !WATCH_HOSTS.has(u.hostname)) return null;
     let vid = null;
     if (u.hostname === 'youtu.be') vid = u.pathname.match(/^\/([A-Za-z0-9_-]{11})\/?$/)?.[1];
     else if (u.pathname === '/watch') vid = u.searchParams.get('v');

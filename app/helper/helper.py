@@ -127,8 +127,10 @@ def valid_parts(raw):
         if not isinstance(raw, str) or not 0 < len(raw) <= 2048:
             return None
         p = urlsplit(raw)
-        if p.scheme != 'https' or p.port not in (None, 443) or p.username or p.password or p.fragment:
+        if p.scheme != 'https' or p.port not in (None, 443) or p.username or p.password:
             return None
+        # A #fragment (a timestamp anchor, for example) is dropped: the canonical URL below is
+        # built from the validated video id alone, never from the pasted text.
         if p.hostname not in {'youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be'}:
             return None
         return p
@@ -782,10 +784,16 @@ def process_job(ident):
 
 def worker_loop():
     while True:
-        with ACTIVE_LOCK:
-            job = STORE.next_queued()
-            if job:
-                WORKER_STATE['current'] = job['id']
+        try:
+            with ACTIVE_LOCK:
+                job = STORE.next_queued()
+                if job:
+                    WORKER_STATE['current'] = job['id']
+        except Exception:               # a locked or briefly unreadable store must not kill the worker
+            LOG.exception('Worker could not read the next job')
+            WAKE.wait(2)
+            WAKE.clear()
+            continue
         if not job:
             WAKE.wait(1)
             WAKE.clear()

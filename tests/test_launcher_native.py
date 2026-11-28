@@ -9,6 +9,7 @@ same binary is then fed installer files built by payload_container.py to check t
 (the C launcher and the Python engine/build script) accept and reject exactly the same bytes.
 """
 import hashlib
+import os
 import shutil
 import struct
 import subprocess
@@ -40,10 +41,18 @@ def sha_vectors_header():
 
 
 def compiler():
+    """A C compiler as an argument list: ['cc']-style, or ['zig', 'cc'] (Zig ships a C compiler,
+    so the launcher core is also tested on machines whose only compiler is the one the release
+    build uses anyway)."""
     for name in ('cc', 'gcc', 'clang'):
         found = shutil.which(name)
         if found:
-            return found
+            return [found]
+    zig = os.environ.get('ZIG') or shutil.which('zig')
+    if zig:
+        found = Path(zig) if Path(zig).is_file() else shutil.which(zig)
+        if found:
+            return [str(Path(found).resolve()), 'cc']
     return None
 
 
@@ -62,8 +71,8 @@ class LauncherCoreTests(unittest.TestCase):
         cls.folder = Path(tempfile.mkdtemp(prefix='bmd-native-'))
         vectors = cls.folder / 'vectors.h'
         vectors.write_text(sha_vectors_header(), encoding='utf-8')
-        cls.exe = cls.folder / 'test_launcher_core'
-        build = subprocess.run([cc, '-std=c11', '-Wall', '-Wextra', '-Werror', '-O1', '-fstrict-aliasing',
+        cls.exe = cls.folder / ('test_launcher_core' + ('.exe' if os.name == 'nt' else ''))
+        build = subprocess.run([*cc, '-std=c11', '-Wall', '-Wextra', '-Werror', '-O1', '-fstrict-aliasing',
                                 '-I', str(SOURCE.parent), '-include', str(vectors), str(SOURCE), str(TEST),
                                 '-o', str(cls.exe)], capture_output=True, text=True)
         if build.returncode != 0:
