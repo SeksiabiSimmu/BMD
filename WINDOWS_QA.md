@@ -7,7 +7,7 @@ Result key: PASS / FAIL / BLOCKED. Note the Windows build, Brave version, and (f
 ## A. Install
 | # | Steps | Expected |
 |---|---|---|
-| A1 | Double-click `BraveMusicDownloader-Setup.exe` on a clean VM with internet. | A window shows the progress and ends with "Installation complete"; no administrator prompt; log at `%LOCALAPPDATA%\BraveMusicDownloader\Install.log`; no `app.staging-*`, `app.old-*`, `.install.lock` or `%TEMP%\BMD-Setup-*` left behind. |
+| A1 | Double-click `BraveMusicDownloader-Setup.exe` on a clean VM with internet. The **installation manager** opens (a component table, all red/grey); click **Install**. | A window shows the progress and ends with "Installation complete"; no administrator prompt; log at `%LOCALAPPDATA%\BraveMusicDownloader\Install.log`; no `app.staging-*`, `app.old-*`, `.install.lock` or `%TEMP%\BMD-Setup-*` left behind. Re-launching the setup file shows every component green and offers Repair and Uninstall. |
 | A1b | Disable the network adapter, double-click `BraveMusicDownloader-Setup-offline.exe`. | Same result; the log shows each tool coming from the installer file and no download. |
 | A1c | `BraveMusicDownloader-Setup.exe /S` in a command prompt, then `echo %ERRORLEVEL%`. Repeat with `/CONSOLE`. | `/S`: no window at all, exit code 0. `/CONSOLE`: text progress, exit code 0. |
 | A1d | `BraveMusicDownloader-Setup.exe /SELFTEST`, then `/?`. | Self-test lists every file as `ok` and ends with "Self-test passed"; `/?` prints the options; exit code 0 for both; nothing was installed. |

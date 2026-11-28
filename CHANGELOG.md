@@ -1,8 +1,25 @@
 # Changelog
 
+## 2.6.0
+
+The setup program becomes an installation manager: it checks what is on the machine before it offers anything.
+
+### Added
+- **Double-clicking the setup file opens an installation manager**, not an immediate installation. It assesses the machine first and shows a component table - the Brave installation, the program files, the installation record, Python, yt-dlp, Deno and FFmpeg (each executed for its version), Native Messaging (registration, manifest, launcher and a live helper round trip), the extension's link to the helper (via the helper's own contact marker), the Start menu entries and the Installed-apps entry - each marked green (working), yellow (needs attention), red (missing or broken) or grey (not applicable). Install, Repair and Uninstall sit under the table; every operation is followed by a fresh assessment, and the manager stays open for repeated operations. Uninstall asks once and keeps music, settings and history; Install is incremental - healthy components are reused and only missing or changed ones are fetched (the engine always did this; the manager now shows it). An older installed version is offered an update; a newer installed version is never downgraded. A legacy pre-2.3 installation is recognized conservatively, and an interrupted previous setup is reported so Repair can finish or roll it back.
+- The engine gained a read-only `manage-status` report behind the manager: component states, ownership from the installation record (or conservative recognition when the record is missing), the version comparison against this setup, and the recommendation. 9 new engine tests; 3 new PowerShell-harness cases; 1 new JavaScript test.
+- `/MANAGE` opens the manager explicitly. `/S` keeps its documented meaning: install silently. `/UNINSTALL`, `/REPAIR`, `/DIAGNOSE`, `/SELFTEST` and `/EXTRACT` work exactly as before.
+- A timestamp-fragment YouTube URL (`watch?v=<id>&t=42s#start`) is accepted and canonicalized instead of refused, on both the extension and the helper side.
+- After a successful install, the extension folder in Explorer and `brave://extensions` open automatically, so the one browser step needs no folder navigation.
+
+### Changed
+- `(no option)` now opens the manager instead of installing right away. Scripts are unaffected: `/S` installs silently as before.
+
 ## 2.5.0
 
 The installer rebuilt as one program, and a release build that refuses to hand out a tree that is not ready.
+
+### Windows verification pass (included in the released 2.5.0 files)
+The first verification on a real Windows 10 PC (Brave 158), after the suite itself was made Windows-compatible (it had never run there): the installer work folder now survives nothing - the setup script empties its own `%TEMP%` work folder; the helper's worker thread survives a transient store error instead of dying silently; payload files are pinned to LF line endings (`.gitattributes`) and the release gate refuses CRLF files, so builds are byte-identical across platforms again; after an install the extension folder and brave://extensions open for the user. Evidence and remaining Windows gaps: `BUILD_AND_TEST_REPORT.md`.
 
 ### Added
 - **One setup file.** `BraveMusicDownloader-Setup.exe` is a single Windows program of under 1 MB: a native launcher (written in C in `app/installer/launcher/`, built with Zig 0.14, importing only `kernel32`, `user32` and `shell32`) followed by the files to install. Double-clicking installs. In 2.4.0 the exe first had to be assembled on a PC with a C# compiler (`Build-Exe.cmd`), or one ran `Install-Dev.cmd`.

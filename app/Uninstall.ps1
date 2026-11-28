@@ -86,6 +86,12 @@ function Test-UninstallPrerequisites([string]$App) {
 function New-WorkCopy([string]$App, [string]$Work) {
     New-Item -ItemType Directory -Path (Join-Path $Work 'installer'), (Join-Path $Work 'helper') -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $App 'python') -Destination (Join-Path $Work 'python') -Recurse
+    if (-not (Test-Path -LiteralPath (Join-Path $Work 'python\python.exe') -PathType Leaf)) {
+        # app\python can be a junction; newer PowerShell copies the junction itself (empty) - copy its contents.
+        Get-ChildItem -LiteralPath (Join-Path $App 'python') -Force | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $Work 'python') -Recurse -Force
+        }
+    }
     foreach ($relative in $script:EngineFiles) {
         Copy-Item -LiteralPath (Join-Parts $App $relative) -Destination (Join-Parts $Work $relative)
     }

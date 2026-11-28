@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Brave Music Downloader 2.5.0: installer / uninstaller engine (stdlib only).
+"""Brave Music Downloader 2.6.0: installer / uninstaller engine (stdlib only).
 
 The native launcher only unpacks the bootstrap files and starts PowerShell; Setup.ps1 only
 bootstraps a verified portable Python and then runs this file. All risky logic (downloads,
@@ -50,7 +50,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bmdfs  # noqa: E402
 import payload_container  # noqa: E402
 
-VERSION = '2.5.0'
+VERSION = '2.6.0'
 HOST_NAME = 'com.bravemusic.downloader'
 EXTENSION_NAME = 'Brave Music Downloader'
 # 2.3.0 and earlier shipped the extension as "Brave Music Downloader (WAV)". An upgrade
@@ -1530,6 +1530,226 @@ def diagnose(layout, registry, extra=None):
             'browser': extra or None}
 
 
+# --------------------------------------------------- installation manager ----
+def _run_version(path, args):
+    """(ok, first version line) of a component executable; False when it will not run."""
+    try:
+        run = subprocess.run([str(path), *args], capture_output=True, text=True, timeout=60,
+                             errors='replace', creationflags=NO_WINDOW)
+        line = ((run.stdout or run.stderr).splitlines() or [''])[0][:100]
+        return run.returncode == 0, line
+    except (OSError, subprocess.TimeoutExpired):
+        return False, 'Execution failed'
+
+
+def manage_status(layout, registry, extra=None, probe=True):
+    """Read-only component assessment for the installation manager.
+
+    Every component gets a state: 'ok' (installed and working), 'warn' (present but
+    outdated, silent, or otherwise needing attention), 'missing', 'broken' (present but
+    not functional), or 'na' (not applicable). Presence alone is not enough: tools are
+    executed, and the native-messaging check ends with a live helper round trip, exactly
+    like the browser's. Ownership comes from the installation record; when the record is
+    missing, recognition is conservative (recognized_app / synthesize_manifest) and the
+    report says so. `probe=False` skips the execution checks (fast, deterministic tests).
+
+    The only side effect is that the check starts this product's own helper once.
+    """
+    components = []
+
+    def comp(cid, label, state, detail='', version=''):
+        components.append({'id': cid, 'label': label, 'state': state,
+                           'detail': str(detail)[:220], 'version': str(version)[:80]})
+
+    manifest = load_manifest(layout)
+    recognized = recognized_app(layout.app) if layout.app.is_dir() else False
+    legacy = manifest is None and recognized
+    if legacy:
+        manifest = synthesize_manifest(layout)
+    installed_version = (manifest or {}).get('version')
+    update_available = False
+
+    # 1. Ownership record.
+    if manifest is not None:
+        comp('record', 'Installation record', 'ok',
+             f"version {installed_version}, installed {manifest.get('installed_at', 'unknown')}"
+             + (' (pre-2.3 install, recognized conservatively)' if legacy else ''),
+             installed_version)
+    else:
+        comp('record', 'Installation record', 'missing', f'nothing installed under {layout.root}')
+
+    # 2. Version compared with this setup.
+    if installed_version and installed_version != 'legacy':
+        order = compare_versions(installed_version, VERSION)
+        if order > 0:
+            comp('update', 'Version', 'warn',
+                 f'the installed version {installed_version} is NEWER than this setup ({VERSION}); '
+                 'nothing is downgraded')
+        elif order < 0:
+            update_available = True
+            comp('update', 'Version', 'warn', f'update available: {installed_version} -> {VERSION}')
+        else:
+            comp('update', 'Version', 'ok', f'{VERSION} - this setup matches the installed version')
+    else:
+        comp('update', 'Version', 'na', 'nothing to compare until the product is installed')
+
+    # 3. The app folder and its own files.
+    if layout.app.is_dir() and recognized:
+        missing = [rel for rel in REQUIRED_PAYLOAD if not (layout.app / rel).is_file()]
+        if missing:
+            comp('app-files', 'Program files', 'broken', 'missing: ' + ', '.join(missing))
+        else:
+            comp('app-files', 'Program files', 'ok', str(layout.app))
+    elif layout.app.is_dir():
+        comp('app-files', 'Program files', 'broken',
+             f'{layout.app} exists but was not installed by this product; it is not touched')
+    else:
+        comp('app-files', 'Program files', 'na', 'not installed')
+
+    # 4. Brave browser (a fact the caller collects, as diagnose does).
+    browser = (extra or {}).get('browser')
+    comp('brave', 'Brave browser', 'ok' if browser else 'missing',
+         str(browser) if browser else 'not found in its usual locations')
+
+    # 5. The four pinned components (python + tools), from the installation record.
+    records = {c.get('name'): c for c in (manifest or {}).get('components', []) if isinstance(c, dict)}
+    tool_checks = {'python': (['--version'], 'python'), 'yt-dlp': (['--version'], 'yt-dlp'),
+                   'deno': (['--version'], 'deno'), 'ffmpeg': (['-version'], 'ffmpeg')}
+    for name, (args, binary) in tool_checks.items():
+        entry = records.get(name, {})
+        if entry and not entry.get('owned'):
+            comp(name, f'{name} (shared)', 'ok', str(entry.get('path', '')), entry.get('version', ''))
+            continue
+        rel = entry.get('files') or [entry.get('path')]
+        paths = [layout.app / r for r in rel if r]
+        exe = paths[0] if paths else layout.app / 'tools' / (name + '.exe')
+        if exe.is_dir():
+            # A record may name the component's folder (a pre-2.3 python, adopted by
+            # synthesize_manifest); the executable is the file inside it.
+            inner = exe / (name + '.exe')
+            if inner.is_file():
+                exe = inner
+        if not exe.is_file():
+            comp(name, name, 'missing', f'missing: {exe}', entry.get('version', ''))
+            continue
+        if probe:
+            ok, line = _run_version(exe, args)
+            comp(name, name, 'ok' if ok else 'broken', str(exe) if ok else line,
+                 line if ok else entry.get('version', ''))
+        else:
+            comp(name, name, 'ok', str(exe), entry.get('version', ''))
+
+    # 6. Native Messaging: registration, manifest, launcher - and a live helper round trip.
+    expected_manifest = (manifest or {}).get('native_host', {}).get('manifest') or str(layout.native_manifest)
+    nm_problems = []
+    for browser_name, key in BROWSER_KEYS.items():
+        value = registry.get(key)
+        if value is None:
+            nm_problems.append(f'{browser_name}: not registered')
+        elif not same_path(value, layout.native_manifest):
+            nm_problems.append(f'{browser_name}: points elsewhere ({value})')
+    host = bmdfs.read_json(layout.native_manifest)
+    if not isinstance(host, dict):
+        nm_problems.append('the native host manifest is missing or unreadable')
+    else:
+        expected_id = (manifest or {}).get('extension_id') or 'lliokngbogdlnnjffdfgdjabpmjpobab'
+        if f'chrome-extension://{expected_id}/' not in host.get('allowed_origins', []):
+            nm_problems.append('the native host manifest does not allow this extension')
+        if not same_path(host.get('path', ''), layout.launcher):
+            nm_problems.append('the native host manifest does not point at the launcher')
+    if not layout.launcher.is_file():
+        nm_problems.append('the native messaging launcher is missing')
+    paths_file = layout.app / 'bridge' / 'host-paths.txt'
+    pair = paths_file.read_text(encoding='utf-8').split('\n')[:2] if paths_file.is_file() else []
+    if len(pair) != 2 or not all(Path(p.strip()).is_file() for p in pair):
+        nm_problems.append('host-paths.txt does not name two existing files')
+    nm_installed = layout.app.is_dir() and recognized
+    if probe and not nm_problems and nm_installed:
+        try:
+            data = native_roundtrip([str(layout.launcher)])
+            comp('native-messaging', 'Native Messaging', 'ok',
+                 f'the helper answered (version {data.get("version")})', data.get('version', ''))
+        except (InstallError, OSError) as exc:
+            nm_problems.append(f'the helper did not answer: {str(exc)[:160]}')
+    if nm_problems:
+        comp('native-messaging', 'Native Messaging', 'broken' if nm_installed else 'missing',
+             '; '.join(nm_problems[:4]))
+    else:
+        comp('native-messaging', 'Native Messaging', 'ok',
+             'registration, manifest and launcher in place' + ('' if probe else ' (not probed)'))
+
+    # 7. The extension, as far as the browser lets us see: the helper records fresh contact
+    #    whenever a loaded extension actually talks to it.
+    contact = extension_contact(layout.data_dir)
+    if not nm_installed:
+        comp('extension', 'Browser extension', 'na', 'install the product first')
+    elif contact['fresh']:
+        comp('extension', 'Browser extension', 'ok',
+             f'loaded and talking to the helper ({contact["age_seconds"]} s ago, version {contact["version"]})')
+    elif contact['seen']:
+        comp('extension', 'Browser extension', 'warn',
+             f'registered, but the browser has not talked to the helper for {contact["age_seconds"]:,.0f} s - '
+             'is the extension loaded in a running Brave?')
+    else:
+        comp('extension', 'Browser extension', 'warn',
+             'never contacted: load it via brave://extensions (Developer mode, Load unpacked)')
+
+    # 8. Shortcuts and the Installed-apps entry (conveniences: warn, never break).
+    if layout.start_menu is not None:
+        state = 'ok' if os.path.lexists(layout.start_menu) else 'warn'
+        detail = str(layout.start_menu) if state == 'ok' else 'the Start menu folder is missing (Repair restores it)'
+        comp('shortcuts', 'Start menu entries', state, detail)
+    entry = registry.get_values(ARP_KEY)
+    if entry is not None and same_path(entry.get('InstallLocation', ''), layout.root):
+        comp('arp', 'Installed apps entry', 'ok', f'"{entry.get("DisplayName", "")}" {entry.get("DisplayVersion", "")}')
+    elif layout.app.is_dir() and recognized:
+        comp('arp', 'Installed apps entry', 'warn', 'missing (Repair restores it)')
+
+    # 9. Interrupted previous setup.
+    journal = bmdfs.read_json(layout.journal) if layout.journal.exists() else None
+    interrupted = isinstance(journal, dict) and journal.get('state') != 'committed'
+    if interrupted:
+        comp('journal', 'Previous setup', 'warn',
+             f'an installation was interrupted (state: {journal.get("state")}); Repair finishes or rolls it back')
+
+    required = [c for c in components if c['id'] in
+                ('record', 'app-files', 'python', 'yt-dlp', 'deno', 'ffmpeg', 'native-messaging')]
+    installed_somewhere = manifest is not None or recognized
+    if not installed_somewhere:
+        overall = 'not-installed'
+    elif interrupted or any(c['state'] in ('missing', 'broken') for c in required):
+        overall = 'repair'
+    elif update_available:
+        overall = 'update'
+    else:
+        overall = 'ok'
+
+    headlines = {
+        'not-installed': 'Brave Music Downloader is not installed on this computer.',
+        'ok': f'Brave Music Downloader {installed_version or VERSION} is installed and working.',
+        'update': f'Brave Music Downloader {installed_version} is installed; this setup contains {VERSION}.',
+        'repair': 'The installation needs attention: Repair fixes the components marked red or yellow.',
+    }
+    return {'version': VERSION, 'installed_version': installed_version, 'overall': overall,
+            'update_available': overall == 'update', 'legacy': legacy, 'interrupted': interrupted,
+            'headline': headlines.get(overall, headlines['repair']), 'root': str(layout.root),
+            'components': components}
+
+
+def manage_status_lines(report):
+    """Plain-text rendering of a manage_status report (console mode and logs)."""
+    marker = {'ok': 'ok     ', 'warn': 'ATTN   ', 'missing': 'MISSING', 'broken': 'BROKEN', 'na': '  --   '}
+    lines = [report['headline'], '']
+    for comp in report['components']:
+        lines.append(f'  {marker.get(comp["state"], "  ?   ")} {comp["label"]}: {comp["detail"]}')
+    lines.append('')
+    lines.append({'not-installed': 'Recommended action: Install.',
+                  'ok': 'Recommended action: none. Repair is available if anything ever breaks.',
+                  'update': 'Recommended action: Install to update (settings and history are kept).',
+                  'repair': 'Recommended action: Repair.'}[report['overall']])
+    return lines
+
+
 # --------------------------------------------------------------------- CLI ----
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Brave Music Downloader installer engine')
@@ -1566,6 +1786,10 @@ def main(argv=None):
     sub.add_parser('hostcheck', parents=[common])
     d = sub.add_parser('diagnose', parents=[common])
     d.add_argument('--extra-json', help='facts collected by setup (e.g. the detected browser) to include')
+    m = sub.add_parser('manage-status', parents=[common])
+    m.add_argument('--no-probe', action='store_true',
+                   help='skip the execution checks (fast and deterministic: for tests)')
+    m.add_argument('--extra-json', help='facts collected by setup (e.g. the detected browser) to include')
     args = parser.parse_args(argv)
     global _log_file
     _log_file = args.log_file
@@ -1621,6 +1845,13 @@ def main(argv=None):
             extra = bmdfs.read_json(Path(args.extra_json)) if args.extra_json else None
             result = diagnose(layout, registry, extra if isinstance(extra, dict) else None)
             log('\nEverything checked out.' if result['ok'] else '\nSome checks failed; the FAIL lines above say what.')
+        elif args.cmd == 'manage-status':
+            extra = bmdfs.read_json(Path(args.extra_json)) if args.extra_json else None
+            result = manage_status(layout, registry, extra if isinstance(extra, dict) else None,
+                                   probe=not args.no_probe)
+            for line in manage_status_lines(result):
+                log(line)
+            result['ok'] = True          # the assessment itself completed; findings are in the report
         else:
             result = verify(layout, registry)
             for problem in result['problems']:

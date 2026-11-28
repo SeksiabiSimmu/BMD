@@ -296,7 +296,7 @@ class LauncherUnderWine(unittest.TestCase):
         self.assertEqual(arguments[1:], [
             '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', work + '\\Setup.ps1',
             '-PayloadZip', work + '\\Application.zip', '-Installer', windows(path), '-Bundle',
-            '-PythonZip', work + '\\python', '-Mode', 'Gui', '-Action', 'Install'])
+            '-PythonZip', work + '\\python', '-Mode', 'Gui', '-Action', 'Manage'])
         self.assertEqual(facts['installer'], ['1|' + windows(path)])
         files = dict(line.split('|', 1) for line in facts['file'])     # name -> "size|sha256"
         self.assertEqual(sorted(files), ['Application.zip', 'Setup.ps1', 'python'],

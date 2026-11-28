@@ -627,24 +627,25 @@ static void test_options(void) {
     lc_options o;
     wchar_t error[256];
     static const struct { int argc; int ui; int action; unsigned options; } cases[] = {
-        {1, LC_UI_GUI, LC_ACTION_INSTALL, 0},
-        {2, LC_UI_SILENT, LC_ACTION_INSTALL, 0},        /* /S */
+        {1, LC_UI_GUI, LC_ACTION_MANAGE, 0},            /* no options: the installation manager */
+        {2, LC_UI_SILENT, LC_ACTION_INSTALL, 0},        /* /S keeps its documented meaning: install */
         {2, LC_UI_SILENT, LC_ACTION_INSTALL, 0},        /* /Silent */
         {2, LC_UI_SILENT, LC_ACTION_INSTALL, 0},        /* -QUIET */
         {2, LC_UI_SILENT, LC_ACTION_INSTALL, 0},        /* /VERYSILENT */
-        {2, LC_UI_CONSOLE, LC_ACTION_INSTALL, 0},       /* /CONSOLE */
-        {3, LC_UI_GUI, LC_ACTION_INSTALL, 0},           /* /S /GUI: the last interface choice wins */
+        {2, LC_UI_CONSOLE, LC_ACTION_MANAGE, 0},        /* /CONSOLE: the manager, as text */
+        {3, LC_UI_GUI, LC_ACTION_MANAGE, 0},            /* /S /GUI: no action, so the manager */
         {2, LC_UI_GUI, LC_ACTION_UNINSTALL, 0},         /* /UNINSTALL */
         {3, LC_UI_SILENT, LC_ACTION_UNINSTALL, 0},      /* /S /uninstall */
         {2, LC_UI_GUI, LC_ACTION_REPAIR, 0},            /* /REPAIR */
         {2, LC_UI_GUI, LC_ACTION_DIAGNOSE, 0},          /* /DIAGNOSE */
+        {2, LC_UI_GUI, LC_ACTION_MANAGE, 0},            /* /MANAGE */
         {2, LC_UI_GUI, LC_ACTION_SELFTEST, 0},          /* /SELFTEST */
         {2, LC_UI_GUI, LC_ACTION_HELP, 0},              /* /? */
         {2, LC_UI_GUI, LC_ACTION_HELP, 0},              /* /HELP */
         {2, LC_UI_GUI, LC_ACTION_HELP, 0},              /* -help */
         {2, LC_UI_GUI, LC_ACTION_HELP, 0},              /* /H */
         {4, LC_UI_SILENT, LC_ACTION_UNINSTALL, LC_OPT_REMOVE_HISTORY},
-        {6, LC_UI_GUI, LC_ACTION_INSTALL, LC_OPT_ALLOW_DOWNGRADE | LC_OPT_REQUIRE_BRAVE | LC_OPT_NO_SHORTCUTS
+        {6, LC_UI_GUI, LC_ACTION_MANAGE, LC_OPT_ALLOW_DOWNGRADE | LC_OPT_REQUIRE_BRAVE | LC_OPT_NO_SHORTCUTS
                                                 | LC_OPT_REMOVE_HISTORY | LC_OPT_ALLOW_UNVERIFIED},
     };
     static wchar_t *lines[][8] = {
@@ -659,6 +660,7 @@ static void test_options(void) {
         {L"setup.exe", L"/S", L"/uninstall", NULL},
         {L"setup.exe", L"/REPAIR", NULL},
         {L"setup.exe", L"/DIAGNOSE", NULL},
+        {L"setup.exe", L"/MANAGE", NULL},
         {L"setup.exe", L"/SELFTEST", NULL},
         {L"setup.exe", L"/?", NULL},
         {L"setup.exe", L"/HELP", NULL},

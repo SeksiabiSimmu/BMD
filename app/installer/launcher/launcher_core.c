@@ -415,7 +415,7 @@ static void usage_error(wchar_t *error, size_t cap, const wchar_t *what, const w
 int lc_parse_args(int argc, wchar_t **argv, lc_options *options, wchar_t *error, size_t error_cap) {
     lc_options opt;
     const wchar_t *why = L"Unknown or malformed option: ";
-    int i;
+    int i, action_seen = 0;
     xmemset(&opt, 0, sizeof opt);
     opt.ui = LC_UI_GUI;
     opt.action = LC_ACTION_INSTALL;
@@ -452,22 +452,34 @@ int lc_parse_args(int argc, wchar_t **argv, lc_options *options, wchar_t *error,
         } else if (ci_eq(name, L"UNINSTALL")) {
             if (has_value) break;
             opt.action = LC_ACTION_UNINSTALL;
+            action_seen = 1;
         } else if (ci_eq(name, L"REPAIR")) {
             if (has_value) break;
             opt.action = LC_ACTION_REPAIR;
+            action_seen = 1;
         } else if (ci_eq(name, L"DIAGNOSE")) {
             if (has_value) break;
             opt.action = LC_ACTION_DIAGNOSE;
+            action_seen = 1;
+        } else if (ci_eq(name, L"MANAGE")) {
+            /* open the installation manager: assess, then let the user choose */
+            if (has_value) break;
+            opt.action = LC_ACTION_MANAGE;
+            opt.ui = LC_UI_GUI;
+            action_seen = 1;
         } else if (ci_eq(name, L"SELFTEST")) {
             if (has_value) break;
             opt.action = LC_ACTION_SELFTEST;
+            action_seen = 1;
         } else if (ci_eq(name, L"?") || ci_eq(name, L"HELP") || ci_eq(name, L"H")) {
             if (has_value) break;
             opt.action = LC_ACTION_HELP;
+            action_seen = 1;
         } else if (ci_eq(name, L"EXTRACT")) {
             if (!has_value) break;
             opt.action = LC_ACTION_EXTRACT;
             opt.extract_dir = value;
+            action_seen = 1;
         } else if (ci_eq(name, L"LOG")) {
             if (!has_value) break;
             opt.log_path = value;
@@ -495,6 +507,10 @@ int lc_parse_args(int argc, wchar_t **argv, lc_options *options, wchar_t *error,
         usage_error(error, error_cap, why, argv[i]);
         return LC_E_USAGE;
     }
+    /* No action given: double-clicking the file opens the installation manager, which
+     * assesses the machine first. /S keeps its documented meaning: install silently. */
+    if (!action_seen)
+        opt.action = (opt.ui == LC_UI_SILENT) ? LC_ACTION_INSTALL : LC_ACTION_MANAGE;
     *options = opt;
     return LC_OK;
 }

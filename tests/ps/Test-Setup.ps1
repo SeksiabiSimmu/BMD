@@ -603,10 +603,14 @@ Check 'window-xaml' {
     $named = @($xaml.SelectNodes("//*[@x:Name]", $manager) | ForEach-Object { $_.GetAttribute('Name', $namespace) } | Sort-Object -Unique)
     $source = Get-Content -LiteralPath (Join-Path $Repo 'Setup.ps1') -Raw
     $lookedUp = @([regex]::Matches(($source -split "`n" | Where-Object { $_ -match 'foreach \(\$name in ' }), "'([^']+)'") |
-                  ForEach-Object { $_.Groups[1].Value })
-    Assert-Same 8 $lookedUp.Count 'the code looks up eight controls'
+                  ForEach-Object { $_.Groups[1].Value } |
+                  Where-Object { $_ -notin @('ManagerInstall', 'ManagerRepair', 'ManagerUninstall') })
+    Assert-Same 8 $lookedUp.Count 'the code looks up the eight display controls (the manager buttons are simple flags)'
     foreach ($name in $lookedUp) { Assert ($named -contains $name) "the window has a control named $name" }
-    Assert-Same 'Heading' (@($named | Where-Object { $lookedUp -notcontains $_ }) -join ', ') 'every other named control is static text'
+    Assert ($named -contains 'ManagerInstall' -and $named -contains 'ManagerRepair' -and $named -contains 'ManagerUninstall') 'the manager buttons exist'
+    Assert-Same 'Heading, ManagerActions, ManagerHeadline, ManagerHint, ManagerPanel, ManagerRows, OperationButtons' `
+        (@($named | Where-Object { $lookedUp -notcontains $_ -and $_ -notin @('ManagerInstall', 'ManagerRepair', 'ManagerUninstall') }) -join ', ') `
+        'every other named control is static text or the manager display'
     Assert-Same 'Brave Music Downloader Setup' $xaml.Window.Title 'the title bar'
 }
 
@@ -675,12 +679,12 @@ Check 'window-close-and-button' {
 Check 'window-result' {
     $controls = New-FakeControls
     $script:FolderToCopy = ''; $script:BrowserToOpen = ''
-    $setup = @{ Outcome = @{ Kind = 'Installed'; Lines = @('Brave Music Downloader 2.5.0 is installed.', 'Finish in Brave:') }
+    $setup = @{ Outcome = @{ Kind = 'Installed'; Lines = @('Brave Music Downloader 2.6.0 is installed.', 'Finish in Brave:') }
                 ExtensionFolder = 'C:\Apps\extension'; Browser = 'C:\Brave\brave.exe' }
     Set-ResultControls -Setup $setup -Controls $controls
     Assert-Same 'Collapsed' $controls.ProgressPanel.Visibility ''
     Assert-Same 'Visible' $controls.Details.Visibility ''
-    Assert-Same "Brave Music Downloader 2.5.0 is installed.`r`nFinish in Brave:" $controls.Details.Text ''
+    Assert-Same "Brave Music Downloader 2.6.0 is installed.`r`nFinish in Brave:" $controls.Details.Text ''
     Assert-Same 'Visible' $controls.Secondary.Visibility 'the copy button appears after an install'
     Assert-Same 'C:\Apps\extension' $script:FolderToCopy ''
     Assert-Same 'Open Brave and close' $controls.Primary.Content ''
@@ -862,7 +866,7 @@ Check 'engine-run-real' {
                                                                 '--registry', 'fake') -Report { param($event) } -Pump { }
         Assert-Same 1 $run.Code 'nothing is installed: the diagnosis ends with exit code 1'
         Assert ($run.Result.result.checks.Count -gt 5) 'the report lists the checks'
-        Assert-Same ('Diagnosing Brave Music Downloader 2.5.0 (' + $root + ')') `
+        Assert-Same ('Diagnosing Brave Music Downloader 2.6.0 (' + $root + ')') `
                     (@(Get-Content -LiteralPath $log | Where-Object { $_ -like 'Diagnosing*' })[0]) 'the engine wrote into the setup log'
         Assert (@(Get-Content -LiteralPath $log | Where-Object { $_ -like 'FAIL installation record*' }).Count -eq 1) 'with its findings'
         $run = Invoke-EngineRun -Setup $context -Arguments @($core, 'uninstall', '--root', $root, '--data-dir', (Join-Path $folder 'data'),
@@ -873,6 +877,57 @@ Check 'engine-run-real' {
 }
 
 # ==== Setup.ps1: the worker ===================================================================
+
+# ==== Setup.ps1: the worker ===================================================================
+
+Check 'manage-status-engine-repair' {
+    # A recognized but incomplete install: the real engine assesses it as needing repair.
+    # Defined BEFORE work-install: that case stubs Invoke-EngineRun and Initialize-Python
+    # and leaves the stubs, which this case must not run against.
+    if (-not $python) { Skip 'needs BMD_TEST_PYTHON' }
+    $home2 = Join-Path $scratch ("manage-engine-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    $app = Join-Parts $home2 @('BraveMusicDownloader', 'app')
+    foreach ($rel in @('extension', 'bridge', 'helper', 'installer', 'tools')) {
+        New-Item -ItemType Directory -Force -Path (Join-Parts $app $rel) | Out-Null
+    }
+    [System.IO.File]::WriteAllText((Join-Parts $app @('extension', 'manifest.json')),
+        '{"name": "Brave Music Downloader", "version": "2.6.0"}')
+    foreach ($rel in @('helper\native_host.py', 'helper\helper.py', 'helper\bmdfs.py',
+                       'installer\installer_core.py', 'installer\payload_container.py',
+                       'bridge\NativeLauncher.cs', 'README.md', 'tools.lock.json')) {
+        [System.IO.File]::WriteAllText((Join-Path $app $rel), '# stub')
+    }
+    [System.IO.File]::WriteAllText((Join-Parts $app @('Uninstall.ps1')), '# un')
+    # A working interpreter at app\python, the way an installation has it (a junction to the real one).
+    $pythonFolder = Join-Parts $app @('python')
+    Remove-Item -LiteralPath $pythonFolder -ErrorAction SilentlyContinue
+    New-Item -ItemType Junction -Path $pythonFolder -Target (Split-Path -Parent $python) | Out-Null
+    $context = New-SetupContextIn (Join-Path $home2 'work') 'Manage'
+    $context.Root = (Split-Path -Parent $app)
+    $context.App = (Join-Path $context.Root 'app')   # computed at creation from the old Root
+    $env:BMD_INSTALL_ROOT = $context.Root            # the engine's paths must resolve here too
+    $env:BMD_DATA_DIR = (Join-Path $home2 'data')
+    New-Item -ItemType Directory -Force -Path (Join-Parts $context.EngineRoot @('installer')), (Join-Parts $context.EngineRoot @('helper')) | Out-Null
+    foreach ($rel in @('installer\installer_core.py', 'installer\payload_container.py')) {
+        Copy-Item -LiteralPath (Join-Path $Repo ('app\installer\' + (Split-Path -Leaf $rel))) (Join-Parts $context.EngineRoot @($rel -split '\\'))
+    }
+    Copy-Item -LiteralPath (Join-Path $Repo 'app\helper\bmdfs.py') (Join-Parts $context.EngineRoot @('helper', 'bmdfs.py'))
+    Copy-Item -LiteralPath (Join-Path $Repo 'tools.lock.json') (Join-Path $context.EngineRoot 'tools.lock.json')
+    $code = Invoke-SetupWork -Setup $context -Report { param($event) } -Pump { }
+    if ($code -ne 0) {
+        $detail = ''
+        if ($context.Outcome -and $context.Outcome.Lines) { $detail = (@($context.Outcome.Lines) -join ' | ') }
+        if ($context.Outcome -and $context.Outcome.Message) { $detail += ' :: ' + $context.Outcome.Message }
+        throw "the assessment completes (exit $code)" + $(if ($detail) { ': ' + $detail } else { '' })
+    }
+    Assert-Same 'Managed' $context.Outcome.Kind 'the outcome kind'
+    Assert-Same 'repair' ([string]$context.ManageReport.overall) 'an incomplete install needs repair'
+    Assert ($context.ManageReport.legacy) 'recognized without a record, conservatively'
+    $text = (@(ConvertTo-ManageLines $context.ManageReport) -join "`n")
+    Assert ($text -match 'Recommended action: Repair') 'the recommendation'
+    Assert ($text -match 'MISSING yt-dlp') 'the missing tool is named'
+    Remove-Item Env:BMD_INSTALL_ROOT, Env:BMD_DATA_DIR -ErrorAction SilentlyContinue
+}
 
 Check 'work-install' {
     $folder = New-Folder 'work-install'
@@ -890,7 +945,7 @@ Check 'work-install' {
                   '--python-zip', 'C:\Temp\BMD-Setup-1-2\python', '--python-verified', 'sha256')
     Assert-Same ($expected -join ' ') ($calls[0] -join ' ') 'the engine is told everything it needs, and nothing more'
     Assert-Same 'phase' (@($events | ForEach-Object { $_.event }) -join ', ') 'the first event is the preparing phase'
-    Assert (($context.Outcome.Lines -join "`n") -match 'Brave Music Downloader 2\.5\.0 is installed') 'the result line'
+    Assert (($context.Outcome.Lines -join "`n") -match 'Brave Music Downloader 2\.6\.0 is installed') 'the result line'
     Assert (($context.Outcome.Lines -join "`n") -match 'Kept unchanged components: python, deno') 'what was reused'
     Assert (($context.Outcome.Lines -join "`n") -match 'brave://extensions') 'how to finish in Brave'
 
@@ -913,7 +968,7 @@ Check 'work-install-update-and-failure' {
     $code = Invoke-SetupWork -Setup $context -Report { param($event) } -Pump { }
     Assert-Same 0 $code 'a repair succeeds'
     Assert-Same 'install' $calls[0][1] 'a repair is an install over the existing files'
-    Assert (($context.Outcome.Lines -join "`n") -match 'Updated 2\.4\.0 -> 2\.5\.0') 'the update line'
+    Assert (($context.Outcome.Lines -join "`n") -match 'Updated 2\.4\.0 -> 2\.6\.0') 'the update line'
     Assert (($context.Outcome.Lines -join "`n") -match 'Repaired components: ffmpeg') 'what was repaired'
     Assert (($calls[0] -join ' ') -like '*--python-verified authenticode*') 'how Python was verified'
 
@@ -1016,7 +1071,7 @@ Check 'work-diagnose' {
     $report = Join-Path $context.Root 'diagnosis.txt'
     Assert ($line -like ('*--json-report *diagnosis.json --log-file ' + $report)) 'the engine writes the text report itself'
     $header = @(Get-Content -LiteralPath $report)
-    Assert ($header[0] -like 'Brave Music Downloader 2.5.0 - diagnosis report, ????-??-?? ??:??:??') ('what setup knows goes in front; was: ' + $header[0])
+    Assert ($header[0] -like 'Brave Music Downloader 2.6.0 - diagnosis report, ????-??-?? ??:??:??') ('what setup knows goes in front; was: ' + $header[0])
     Assert-Same 'Setup mode: Gui; Brave: C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe' $header[1] ''
     $factsFile = $calls[0][$calls[0].IndexOf('--extra-json') + 1]
     $facts = Read-JsonFile $factsFile
@@ -1084,6 +1139,41 @@ Check 'install-opens-help-windows' {
     }
 }
 
+Check 'manage-nothing-installed' {
+    # No product anywhere: the manager's status comes straight from Setup.ps1, without the engine.
+    $context = New-SetupContextIn (New-Folder 'manage-none') 'Manage'
+    $context.Browser = 'C:\Brave\brave.exe'
+    $code = Invoke-SetupWork -Setup $context -Report { param($event) } -Pump { }
+    Assert-Same 0 $code 'the assessment completes'
+    Assert-Same 'Managed' $context.Outcome.Kind 'the outcome kind'
+    Assert-Same 'not-installed' ([string]$context.ManageReport.overall) 'the honest status'
+    $brave = @($context.ManageReport.components | Where-Object { $_.id -eq 'brave' })
+    Assert-Same 'ok' ([string]$brave[0].state) 'the found browser is reported'
+    $lines = ConvertTo-ManageLines $context.ManageReport
+    Assert ((@($lines) -like 'Recommended action: Install.').Count -ge 1) 'the recommendation'
+}
+
+Check 'manage-renders-table' {
+    # The renderer: markers per state, the headline first, the recommendation last.
+    $report = @{ headline = 'Brave Music Downloader 2.6.0 is installed and working.'; overall = 'ok'; components = @(
+        @{ id = 'a'; label = 'Brave browser'; state = 'ok'; detail = 'C:\Brave\brave.exe'; version = '' },
+        @{ id = 'b'; label = 'yt-dlp'; state = 'missing'; detail = 'missing: tools\yt-dlp.exe'; version = '' },
+        @{ id = 'c'; label = 'Browser extension'; state = 'warn'; detail = 'never contacted'; version = '' },
+        @{ id = 'd'; label = 'Version'; state = 'na'; detail = 'nothing to compare'; version = '' }) }
+    $lines = ConvertTo-ManageLines $report
+    Assert-Same 'Brave Music Downloader 2.6.0 is installed and working.' $lines[0] 'the headline first'
+    $text = (@($lines) -join "`n")
+    Assert ($text -match 'ok +Brave browser') 'the ok marker'
+    Assert ($text -match 'MISSING yt-dlp') 'the missing marker'
+    Assert ($text -match 'ATTN +Browser extension') 'the warn marker'
+    Assert ($text -match '-- +Version') 'the na marker'
+    Assert-Same 'Recommended action: none. Repair is available if anything ever breaks.' $lines[-1] 'the recommendation'
+    $report.overall = 'repair'
+    Assert-Same 'Recommended action: Repair.' ((ConvertTo-ManageLines $report)[-1]) 'the repair recommendation'
+    $report.overall = 'update'
+    Assert-Same 'Recommended action: Install to update (settings and history are kept).' ((ConvertTo-ManageLines $report)[-1]) 'the update recommendation'
+}
+
 # ==== Setup.ps1: the entry point in a child process ==========================================
 
 Check 'entry-uninstall-nothing' {
@@ -1094,7 +1184,7 @@ Check 'entry-uninstall-nothing' {
     Assert-Same 9 $run.Code "exit code; output: $($run.Out) error: $($run.Error)"
     Assert ($run.Out -like '*nothing to remove*') 'the console says so'
     $text = Get-Content -LiteralPath (Join-Parts $environment['LOCALAPPDATA'] @('BraveMusicDownloader', 'Install.log')) -Raw
-    Assert ($text -match 'Brave Music Downloader v2\.5\.0 - setup \(Console mode, Uninstall\)') 'the log names version, mode and action'
+    Assert ($text -match 'Brave Music Downloader v2.6.0 - setup \(Console mode, Uninstall\)') 'the log names version, mode and action'
     Assert ($text -match 'Nothing is installed') 'and the reason'
     Assert ($text -match 'Exit code 9') 'and the exit code'
     # Silent: the same decision, without a word.

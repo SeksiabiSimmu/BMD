@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Brave Music Downloader",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Native messaging-powered music download queue with a choice of WAV, FLAC or MP3, embedded metadata and artwork, and a dashboard, for authorized YouTube content.",
   "minimum_chrome_version": "110",
   "permissions": [

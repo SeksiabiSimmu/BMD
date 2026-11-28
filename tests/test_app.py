@@ -874,7 +874,7 @@ class NativeHostTests(Base):
                                 'format': 'wav', 'metadata': True, 'normalize': False,
                                 'items': [{'id': 'v%010d' % i, 'title': 't'} for i in range(5)]}},
                             {'id': 3, 'method': 'jobs', 'params': {'limit': 2}})
-        self.assertEqual(replies[0]['data']['version'], '2.5.0')
+        self.assertEqual(replies[0]['data']['version'], '2.6.0')
         self.assertIn('pagination', replies[0]['data']['features'])
         self.assertEqual(len(replies[1]['data']['added']), 5)
         page = replies[2]['data']

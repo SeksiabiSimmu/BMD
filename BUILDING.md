@@ -3,7 +3,7 @@
 Requirements: Python 3.12+ (build, gates and tests), [Zig 0.14.1](https://ziglang.org/download/) to compile the setup program (`ZIG=<path>`, `--zig <path>`, or `zig` on the PATH), and optionally Node 20+ (the JavaScript tests; the release gate also runs `node --check` on the extension's scripts when Node is installed), ffmpeg/ffprobe (the full audio pipeline tests) and PowerShell 7 (`pwsh`, which runs the tests of `Setup.ps1` and `Uninstall.ps1`). Two suites are skipped, never failed, when their tools are missing: `tests/test_launcher_wine.py` needs Zig and Wine (`WINE=<wine binary or wrapper script>`, `WINE_PREFIX=<prefix>`), and `tests/test_browser.py` needs Playwright with a Chromium (`pip install playwright && playwright install chromium`). `BMD_TEST_BROWSER=1` turns "Playwright is not installed" from a skip into a failure, for a machine that is supposed to have it: a requested run must not look like a pass. `BMD_TEST_CHROMIUM=<executable>` runs the browser suite in another Chromium-based browser such as Brave; `BMD_TEST_SHOTS=<folder>` keeps a screenshot of every page it opens.
 
 ```
-PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v   # Python suites: 306 tests (15 are the browser suite)
+PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v   # Python suites: 293 tests (15 more are the browser suite where Playwright is installed)
 BMD_TEST_BROWSER=1 PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p test_browser.py -v   # browser suite alone
 node --test tests/js/poller.test.js tests/js/background.test.js \
            tests/js/popup.test.js tests/js/dashboard.test.js tests/js/content.test.js   # 72 JS tests

@@ -4,16 +4,16 @@
 
 ## Install (Windows 10/11, 64-bit)
 
-1. **Download one file:** [`BraveMusicDownloader-Setup.exe`](https://github.com/SeksiabiSimmu/BMD/releases/latest) from the latest release (~226 KB). The installer downloads Python, yt-dlp, Deno and FFmpeg by itself and checks every one against a pinned SHA-256. No internet on that PC? Download `BraveMusicDownloader-Setup-offline.exe` from the same release — the four tools are inside it.
-2. **Double-click it.** Everything installs automatically for your Windows user: no administrator rights, no PATH changes, no browser policies. The installer verifies that the helper answers before it reports success.
+1. **Download one file:** [`BraveMusicDownloader-Setup.exe`](https://github.com/SeksiabiSimmu/BMD/releases/latest) from the latest release (~226 KB). No internet on that PC? Download `BraveMusicDownloader-Setup-offline.exe` instead — Python, yt-dlp, Deno and FFmpeg are inside it.
+2. **Double-click it.** It opens the **installation manager**: a check of what is on the machine, each component shown green, yellow, red or grey. Click **Install** — the installer downloads what is missing (verified against pinned SHA-256 values), configures everything for your Windows user (no administrator rights), and verifies that the helper answers before it reports success.
 3. **One step in Brave** (its security rules do not allow silent extension installs): the installer opens the extension folder and `brave://extensions` for you — turn on **Developer mode**, click **Load unpacked**, pick the folder, done.
 4. Open the extension → **Full dashboard → Diagnostics → Run checks.** Files are saved in `Music\Brave Music Downloader`.
 
-Updating is the same one file — settings and history are kept and unchanged tools are reused. Repair, diagnostics and uninstall live in the same installer, the Start menu folder and Windows' Installed apps. Details: `docs/INSTALLATION.md`.
+The same manager handles **Repair** (it diagnoses first, fixes what is marked, keeps your data) and **Uninstall** (asks once; music, settings and history are kept) — and it re-checks the installation after every operation. Updating is the same one file; unchanged tools are reused. Details: `docs/INSTALLATION.md`.
 
-## Status: Windows-verified 2.5.0
+## Status: Windows-verified
 
-Install, repair, diagnostics, uninstall and live downloads in Brave were verified on a real Windows 10 PC — the evidence is in `BUILD_AND_TEST_REPORT.md` and `docs/QA-REPORT-2.5.0.md`. What still needs other environments is listed in `WINDOWS_QA.md`: the power-loss cases, a PC without Brave, Windows 7 / 32-bit, the offline installer on a truly offline PC, and SmartScreen behavior of the unsigned file. `CHANGELOG.md` describes what 2.5.0 contains.
+Install, repair, diagnostics, uninstall and live downloads in Brave were verified on a real Windows 10 PC — the evidence is in `BUILD_AND_TEST_REPORT.md` and `docs/QA-REPORT-2.5.0.md`. What still needs other environments is listed in `WINDOWS_QA.md`: the power-loss cases, a PC without Brave, Windows 7 / 32-bit, the offline installer on a truly offline PC, and SmartScreen behavior of the unsigned file. `CHANGELOG.md` describes what each release contains.
 
 ## What is here
 

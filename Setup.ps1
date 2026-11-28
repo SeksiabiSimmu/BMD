@@ -1,4 +1,4 @@
-# Brave Music Downloader 2.5.0 - setup script.
+# Brave Music Downloader 2.6.0 - setup script.
 #
 # The setup program (BraveMusicDownloader-Setup.exe) unpacks this file, the application archive and,
 # in the offline build, a Python archive into a private temporary folder and starts Windows
@@ -29,7 +29,7 @@ param(
     [string]$Installer = '',
     [string]$PythonZip = '',
     [ValidateSet('Gui', 'Console', 'Silent')][string]$Mode = 'Gui',
-    [ValidateSet('Install', 'Uninstall', 'Repair', 'Diagnose')][string]$Action = 'Install',
+    [ValidateSet('Install', 'Uninstall', 'Repair', 'Diagnose', 'Manage')][string]$Action = 'Manage',
     [string]$Log = '',
     [switch]$Bundle,
     [switch]$AllowDowngrade,
@@ -39,7 +39,7 @@ param(
     [switch]$AllowUnverified
 )
 
-$script:Version = '2.5.0'
+$script:Version = '2.6.0'
 $script:ExtensionId = 'lliokngbogdlnnjffdfgdjabpmjpobab'
 $script:StartMenuFolder = 'Brave Music Downloader'
 $script:LogFile = ''          # set by Invoke-Main; the engine gets a copy through --log-file
@@ -363,6 +363,14 @@ function Initialize-Python {
 
     if (-not $needsArchive -and (Test-Path -LiteralPath $installed -PathType Leaf)) {
         Copy-Item -LiteralPath (Join-Path $Setup.App 'python') -Destination $target -Recurse
+        if (-not (Test-Path -LiteralPath (Join-Path $target 'python.exe') -PathType Leaf)) {
+            # app\python can be a junction to the interpreter's home (a repair over a legacy
+            # install): newer PowerShell copies the junction itself - as an empty folder - so
+            # copy the contents explicitly when python.exe did not come across.
+            Get-ChildItem -LiteralPath (Join-Path $Setup.App 'python') -Force | ForEach-Object {
+                Copy-Item -LiteralPath $_.FullName -Destination $target -Recurse -Force
+            }
+        }
         $source = 'installed'
         Write-Log 'Using the installed Python.'
     } else {
@@ -402,6 +410,8 @@ function Start-Engine {
     $info.WorkingDirectory = $Folder
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true              # no console window, whatever mode setup runs in
+    $info.RedirectStandardError = $true       # normally empty; when it is not, it is the
+    $info.RedirectStandardOutput = $true      # fastest way to the real problem
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $info
     try {
@@ -410,6 +420,18 @@ function Start-Engine {
         throw (New-SetupError 'failed' "The setup engine could not be started ($($_.Exception.Message)).")
     }
     return $process
+}
+
+# Everything the engine printed on its own streams - for the log and for a failed run's
+# details. Called after the engine has exited, so reading cannot deadlock a writing child.
+function Get-EngineOutput($Process) {
+    $lines = @()
+    try {
+        foreach ($text in @($Process.StandardOutput.ReadToEnd(), $Process.StandardError.ReadToEnd())) {
+            if ($text -and $text.Trim()) { $lines += @($text.Trim() -split "`r?`n" | Where-Object { $_ -ne '' }) }
+        }
+    } catch { }
+    return $lines
 }
 
 # Where a file was read up to. The engine appends JSON lines to the progress file; only complete
@@ -491,17 +513,21 @@ function Invoke-EngineRun {
         catch { Write-Log "The progress display stopped: $($_.Exception.Message)" }
     }
     $exitCode = $process.ExitCode
+    $engineOutput = Get-EngineOutput $process
     $process.Close()
+    foreach ($line in $engineOutput) { Write-Log ('engine: ' + $line) }
     $result = Read-JsonFile $resultFile
     if ($null -eq $result) {
         # The engine always writes the file, even when it fails; without it nothing is known about
         # the state of the installation, so this counts as a failed setup.
         Write-Log "The engine ended with exit code $exitCode without writing a result file."
-        return @{ Code = 1; Result = $null; Exit = $exitCode; Message = "The setup engine ended unexpectedly (exit code $exitCode)." }
+        $message = "The setup engine ended unexpectedly (exit code $exitCode)."
+        if ($engineOutput) { $message += ' Engine output: ' + (@($engineOutput) -join ' | ') }
+        return @{ Code = 1; Result = $null; Exit = $exitCode; Message = $message; EngineOutput = $engineOutput }
     }
     Write-Log ("Result: ok={0} category={1}" -f $result.ok, $result.category)
     if ($result.message) { Write-Log ([string]$result.message) }
-    return @{ Code = (Get-ExitCode $result); Result = $result; Exit = $exitCode; Message = [string]$result.message }
+    return @{ Code = (Get-ExitCode $result); Result = $result; Exit = $exitCode; Message = [string]$result.message; EngineOutput = $engineOutput }
 }
 
 # ---- what is shown at the end -----------------------------------------------------------
@@ -518,6 +544,26 @@ function Get-ExtensionSteps([string]$ExtensionFolder, [bool]$OnClipboard) {
 
 function Copy-ExtensionFolder([string]$ExtensionFolder) {
     try { Set-Clipboard -Value $ExtensionFolder -ErrorAction Stop; return $true } catch { return $false }
+}
+
+# The installation manager's status table, as console/log text. The engine writes the same
+# report as JSON; this renders it (Setup.ps1 owns the presentation, the engine the facts).
+function ConvertTo-ManageLines([object]$Report) {
+    $marker = @{ ok = 'ok     '; warn = 'ATTN   '; missing = 'MISSING'; broken = 'BROKEN'; na = '  --   ' }
+    $lines = @([string]$Report.headline, '')
+    foreach ($component in @($Report.components)) {
+        $state = [string]$component.state
+        $mark = if ($marker.ContainsKey($state)) { $marker[$state] } else { '  ?   ' }
+        $lines += ('  ' + $mark + ' ' + $component.label + ': ' + $component.detail)
+    }
+    $lines += ''
+    $lines += switch ([string]$Report.overall) {
+        'not-installed' { 'Recommended action: Install.' }
+        'ok' { 'Recommended action: none. Repair is available if anything ever breaks.' }
+        'update' { 'Recommended action: Install to update (settings and history are kept).' }
+        default { 'Recommended action: Repair.' }
+    }
+    return $lines
 }
 
 # After a successful install, open the two windows that guide the last step: the extension
@@ -590,6 +636,27 @@ function Invoke-SetupWork {
             }
         }
 
+        # The manager's status assessment. When nothing of the product exists at all, the engine
+        # is not needed: those two facts are the honest whole status. Otherwise the engine (with
+        # the installed Python, or a freshly provided one) assesses every component in turn.
+        if ($Setup.Action -eq 'Manage') {
+            $record = Join-Path $Setup.Root 'install-manifest.json'
+            if (-not (Test-Path -LiteralPath $record) -and -not (Test-Path -LiteralPath $Setup.App -PathType Container)) {
+                $Setup.ManageReport = [pscustomobject]@{
+                    version = $script:Version
+                    installed_version = $null
+                    overall = 'not-installed'
+                    headline = 'Brave Music Downloader is not installed on this computer.'
+                    components = @(
+                        [pscustomobject]@{ id = 'record'; label = 'Installation record'; state = 'missing'; detail = "nothing installed under $($Setup.Root)"; version = '' },
+                        [pscustomobject]@{ id = 'brave'; label = 'Brave browser'; state = $(if ($Setup.Browser) { 'ok' } else { 'missing' }); detail = $(if ($Setup.Browser) { $Setup.Browser } else { 'not found in its usual locations' }); version = '' }
+                    )
+                }
+                $Setup.Outcome = @{ Kind = 'Managed'; Code = 0; Lines = @() }
+                return 0
+            }
+        }
+
         $Setup.Python = Initialize-Python -Setup $Setup -PythonZip $Setup.PythonZip -AllowUnverified $Setup.AllowUnverified `
                                            -Report $Report -Pump $Pump
 
@@ -609,6 +676,25 @@ function Invoke-SetupWork {
             if ($Setup.RemoveHistory) { $engine += @('--remove-history', '--confirm', 'DELETE HISTORY') }
             $run = Invoke-EngineRun -Setup $Setup -Arguments ($common + $engine) -Report $Report -Pump $Pump
             $Setup.Outcome = Get-UninstallOutcome -Setup $Setup -Run $run
+        } elseif ($Setup.Action -eq 'Manage') {
+            # Read-only: the engine assesses every component; the manager window renders it.
+            $facts = Join-Path $Setup.Work 'browser.json'
+            $browserText = 'not found'
+            if ($Setup.Browser) { $browserText = [string]$Setup.Browser }
+            $utf8 = New-Object System.Text.UTF8Encoding $false
+            [System.IO.File]::WriteAllText($facts, (@{ found = [bool]$Setup.Browser; path = $Setup.Browser; mode = $Setup.Mode } | ConvertTo-Json -Compress), $utf8)
+            $reportPath = Join-Path $Setup.Work 'manage-status.json'
+            $engine = @('manage-status', '--root', $Setup.Root, '--extra-json', $facts, '--json-report', $reportPath)
+            $run = Invoke-EngineRun -Setup $Setup -Arguments ($common + $engine) -Report $Report -Pump $Pump
+            if ($run.Code -ne 0) { throw (New-SetupError 'failed' "The status check did not complete (exit code $($run.Code)): $($run.Message).") }
+            $Setup.ManageReport = Read-JsonFile $reportPath
+            if ($null -eq $Setup.ManageReport) {
+                $engineTail = ''
+                if ($run.EngineOutput) { $engineTail = ' Engine said: ' + (@($run.EngineOutput) -join ' | ') }
+                throw (New-SetupError 'failed' ('The status report was not written (engine exit 0). Debug: ' + $script:ManageDebug + $engineTail))
+            }
+            $Setup.Outcome = @{ Kind = 'Managed'; Code = 0; Lines = @() }
+            return 0
         } else {
             # Not $report: that is the $Report parameter (names ignore case), which the engine run needs.
             $reportPath = Join-Path $Setup.Root 'diagnosis.txt'
@@ -722,6 +808,9 @@ function Invoke-Console {
     Write-Progress -Activity 'Brave Music Downloader Setup' -Completed
     Write-Host ''
     foreach ($line in $Setup.Outcome.Lines) { Write-Host $line }
+    if ($Setup.Outcome.Kind -eq 'Managed') {
+        foreach ($line in (ConvertTo-ManageLines $Setup.ManageReport)) { Write-Host $line }
+    }
     if ($code -eq 0) { Write-Host "Setup finished (exit code 0)." -ForegroundColor Green }
     elseif ($code -eq 9) { Write-Host "Nothing to remove (exit code 9)." -ForegroundColor Yellow }
     else { Write-Host "Setup did not complete (exit code $code)." -ForegroundColor Red }
@@ -773,11 +862,23 @@ $script:WindowXaml = @'
       <TextBlock x:Name="Status" TextWrapping="Wrap" FontSize="15" Text="Preparing setup..." />
       <TextBlock x:Name="Detail" TextWrapping="Wrap" Style="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" Text="" />
     </StackPanel>
+    <StackPanel x:Name="ManagerPanel" Grid.Row="2" Visibility="Collapsed">
+      <TextBlock x:Name="ManagerHeadline" FontSize="14" FontWeight="SemiBold" Text="Checking the installation..." TextWrapping="Wrap" />
+      <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
+        <StackPanel x:Name="ManagerRows" />
+      </ScrollViewer>
+      <TextBlock x:Name="ManagerHint" Style="{StaticResource Muted}" FontSize="11" Margin="0,8,0,0" Text="" TextWrapping="Wrap" />
+    </StackPanel>
     <TextBox x:Name="Details" Grid.Row="2" Visibility="Collapsed" IsReadOnly="True" TextWrapping="Wrap"
              BorderThickness="0" FontFamily="Segoe UI" FontSize="13" VerticalScrollBarVisibility="Auto"
              Foreground="#FF202124" Background="Transparent" />
     <ProgressBar x:Name="Bar" Grid.Row="3" Height="20" Margin="0,14,0,0" Minimum="0" Maximum="100" IsIndeterminate="True" />
-    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+    <StackPanel x:Name="ManagerActions" Grid.Row="4" Orientation="Horizontal" Visibility="Collapsed">
+      <Button x:Name="ManagerInstall" Content="Install" MinWidth="110" Height="30" FontWeight="SemiBold" />
+      <Button x:Name="ManagerRepair" Content="Repair" MinWidth="110" Height="30" Margin="8,0,0,0" />
+      <Button x:Name="ManagerUninstall" Content="Uninstall" MinWidth="110" Height="30" Margin="8,0,0,0" />
+    </StackPanel>
+    <StackPanel x:Name="OperationButtons" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
       <Button x:Name="Secondary" Content="Copy folder" Visibility="Collapsed" />
       <Button x:Name="Primary" Content="Cancel" IsCancel="False" />
     </StackPanel>
@@ -859,9 +960,134 @@ function Set-ResultControls($Setup, $Controls) {
     }
 }
 
+# ---- the installation manager ------------------------------------------------------------
+
+# Checking state: the table is cleared, the actions are unavailable, and the previous
+# operation's result ($Note) stays visible above the hint until the new status arrives.
+function Show-ManagerChecking($Controls, [string]$Note) {
+    $Controls.ManagerPanel.Visibility = 'Visible'
+    $Controls.ManagerActions.Visibility = 'Visible'
+    $Controls.OperationButtons.Visibility = 'Collapsed'
+    $Controls.ProgressPanel.Visibility = 'Collapsed'
+    $Controls.Bar.Visibility = 'Collapsed'
+    $Controls.ManagerRows.Children.Clear()
+    $Controls.ManagerHeadline.ClearValue([System.Windows.Controls.TextBlock]::ForegroundProperty)
+    $Controls.ManagerHeadline.Text = 'Checking the installation...'
+    $Controls.ManagerHint.Text = [string]$Note
+    foreach ($name in 'ManagerInstall', 'ManagerRepair', 'ManagerUninstall') {
+        $Controls.$name.IsEnabled = $false
+    }
+}
+
+# The status table: one colored line per component, headline colored by overall state,
+# buttons enabled for what the state allows. Install always stays available: it completes,
+# updates, or re-checks without touching healthy components.
+function Show-ManageStatus($Controls, $Report, [string]$Note) {
+    $Controls.ManagerPanel.Visibility = 'Visible'
+    $Controls.ManagerActions.Visibility = 'Visible'
+    $Controls.OperationButtons.Visibility = 'Collapsed'
+    $Controls.ProgressPanel.Visibility = 'Collapsed'
+    $Controls.Bar.Visibility = 'Collapsed'
+    $Controls.ManagerRows.Children.Clear()
+    $colors = @{ ok = 'FF1E8E3E'; warn = 'FFB06000'; missing = 'FFD93025'; broken = 'FFD93025'; na = 'FF5F6368' }
+    $marks = @{ ok = '[+]'; warn = '[!]'; missing = '[x]'; broken = '[x]'; na = '[ ]' }
+    $brush = New-Object System.Windows.Media.BrushConverter
+    $overall = [string]$Report.overall
+    $headlineColor = switch ($overall) { 'ok' { 'FF1E8E3E' } 'update' { 'FFB06000' } 'repair' { 'FFD93025' } default { 'FF202124' } }
+    $Controls.ManagerHeadline.Text = [string]$Report.headline
+    $Controls.ManagerHeadline.Foreground = $brush.ConvertFromString($headlineColor)
+    foreach ($component in @($Report.components)) {
+        $state = [string]$component.state
+        $row = New-Object System.Windows.Controls.TextBlock
+        $mark = if ($marks.ContainsKey($state)) { $marks[$state] } else { '[?]' }
+        $row.Text = $mark + ' ' + $component.label + ' - ' + $component.detail
+        $row.TextWrapping = [System.Windows.TextWrapping]::Wrap
+        $row.Margin = '0,2,0,2'
+        $row.FontSize = 12
+        if ($colors.ContainsKey($state)) { $row.Foreground = $brush.ConvertFromString($colors[$state]) }
+        $Controls.ManagerRows.Children.Add($row)
+    }
+    $Controls.ManagerInstall.IsEnabled = $true
+    $Controls.ManagerInstall.Content = switch ($overall) { 'update' { 'Install update' } default { 'Install' } }
+    $Controls.ManagerRepair.IsEnabled = ($overall -ne 'not-installed')
+    $Controls.ManagerUninstall.IsEnabled = ($overall -ne 'not-installed')
+    $hint = [string]$Note
+    $hint += switch ($overall) {
+        'not-installed' { ' Install installs everything this product needs.' }
+        'ok' { ' Nothing needs doing. Repair re-checks and fixes; Uninstall removes the program (your music and history are kept).' }
+        'update' { ' Install updates the program; your settings and history are kept.' }
+        default { ' Repair fixes the marked components; your music, settings and history are kept.' }
+    }
+    $Controls.ManagerHint.Text = $hint
+}
+
+# Operation state: the manager gives way to the progress panel (with its Cancel button).
+function Show-ManagerOperation($Controls, [string]$Action) {
+    $Controls.ManagerPanel.Visibility = 'Collapsed'
+    $Controls.ManagerActions.Visibility = 'Collapsed'
+    $Controls.OperationButtons.Visibility = 'Visible'
+    $Controls.ProgressPanel.Visibility = 'Visible'
+    $Controls.Bar.Visibility = 'Visible'
+    $Controls.Bar.IsIndeterminate = $true
+    $Controls.Status.Text = "Preparing: $Action..."
+    $Controls.Detail.Text = ''
+    $script:Critical = $false
+    $script:Finished = $false
+    $Controls.Primary.Content = 'Cancel'
+    $Controls.Primary.IsEnabled = $true
+    $Controls.Secondary.Visibility = 'Collapsed'
+}
+
+function Confirm-Uninstall([string]$Version) {
+    $text = "Remove Brave Music Downloader$(if ($Version) { ' ' + $Version })?`n`nYour music, settings and download history are kept. The extension entry in brave://extensions is removed separately."
+    return ([System.Windows.MessageBox]::Show($text, 'Uninstall Brave Music Downloader', 'YesNo', 'Warning') -eq 'Yes')
+}
+
+# The manager loop: assess, show the component table, run the chosen operation, assess again.
+# Read-only until the user picks an action; the window stays open for repeated operations, and
+# the previous operation's summary stays visible above the fresh status.
+function Invoke-ManagerLoop([hashtable]$Setup, $Window, $Controls, [scriptblock]$Report, [scriptblock]$Pump) {
+    $lastCode = 0
+    $note = ''
+    while (-not $script:WindowClosed) {
+        Show-ManagerChecking -Controls $Controls -Note $note
+        $Setup.Action = 'Manage'
+        $Setup.Outcome = $null
+        $Setup.ManageReport = $null
+        [void](Invoke-SetupWork -Setup $Setup -Report { param($event) } -Pump $Pump)
+        $note = ''
+        if ($null -eq $Setup.ManageReport) {
+            $Controls.ManagerHeadline.Text = 'The status check did not complete.'
+            $Controls.ManagerRows.Children.Clear()
+            $Controls.ManagerHint.Text = 'Run Setup.exe again; if it keeps failing, run it with /CONSOLE for details.'
+            $Controls.ManagerInstall.IsEnabled = $true
+            $Controls.ManagerRepair.IsEnabled = $false
+            $Controls.ManagerUninstall.IsEnabled = $false
+        } else {
+            Show-ManageStatus -Controls $Controls -Report $Setup.ManageReport -Note ''
+        }
+        while (-not $script:WindowClosed -and -not $script:ManagerAction) { & $Pump }
+        if ($script:WindowClosed) { break }
+        $action = $script:ManagerAction
+        $script:ManagerAction = ''
+        if ($action -eq 'Uninstall' -and -not (Confirm-Uninstall [string]$Setup.ManageReport.installed_version)) { continue }
+        Show-ManagerOperation -Controls $Controls -Action $action
+        $Setup.Action = $action
+        $Setup.Outcome = $null
+        $lastCode = Invoke-SetupWork -Setup $Setup -Report $Report -Pump $Pump
+        if ($Setup.Outcome -and @($Setup.Outcome.Lines).Count) {
+            $note = [string]$Setup.Outcome.Lines[0]
+            if ($Setup.Outcome.Kind -eq 'Removed') { $note += ' ' + [string]$Setup.Outcome.Lines[-1] }
+        }
+    }
+    return $lastCode
+}
+
 # The window is driven by one loop: each round processes the window's messages (so it repaints and
 # reacts to clicks) and then does a bit of waiting for the engine. It cannot run anywhere but on
 # Windows; WINDOWS_QA.md lists what to look at. What the handlers decide is in the functions above.
+# Manage mode replaces the single operation with the manager loop: assess, offer Install, Repair
+# and Uninstall, run the chosen one, assess again - for as long as the window is open.
 function Invoke-Gui {
     param([hashtable]$Setup)
     $script:Critical = $false          # the installation is being swapped in: no cancel, no close
@@ -870,6 +1096,7 @@ function Invoke-Gui {
     $script:CancelRequested = $false
     $script:BrowserToOpen = ''
     $script:FolderToCopy = ''
+    $script:ManagerAction = ''
     try {
         Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
         [xml]$xaml = $script:WindowXaml
@@ -880,7 +1107,9 @@ function Invoke-Gui {
         return 1
     }
     $controls = @{}
-    foreach ($name in 'Subheading', 'ProgressPanel', 'Status', 'Detail', 'Details', 'Bar', 'Secondary', 'Primary') {
+    foreach ($name in 'Subheading', 'ProgressPanel', 'Status', 'Detail', 'Details', 'Bar', 'Secondary', 'Primary',
+                       'ManagerPanel', 'ManagerHeadline', 'ManagerRows', 'ManagerHint', 'ManagerActions',
+                       'ManagerInstall', 'ManagerRepair', 'ManagerUninstall', 'OperationButtons') {
         $controls[$name] = $window.FindName($name)
     }
     $controls.Subheading.Text = "Setup $script:Version"
@@ -901,6 +1130,9 @@ function Invoke-Gui {
     $window.Add_Closed({ $script:WindowClosed = $true })
     $controls.Primary.Add_Click({ Invoke-PrimaryClick -Window $window -Controls $controls })
     $controls.Secondary.Add_Click({ Copy-FolderToClipboard -Folder $script:FolderToCopy -Button $controls.Secondary })
+    $controls.ManagerInstall.Add_Click({ $script:ManagerAction = 'Install' })
+    $controls.ManagerRepair.Add_Click({ $script:ManagerAction = 'Repair' })
+    $controls.ManagerUninstall.Add_Click({ $script:ManagerAction = 'Uninstall' })
 
     $pump = {
         $window.Dispatcher.Invoke([Action] { }, [System.Windows.Threading.DispatcherPriority]::ApplicationIdle)
@@ -910,6 +1142,9 @@ function Invoke-Gui {
 
     $window.Show()
     & $pump
+    if ($Setup.Action -eq 'Manage') {
+        return (Invoke-ManagerLoop -Setup $Setup -Window $window -Controls $controls -Report $report -Pump $pump)
+    }
     $code = Invoke-SetupWork -Setup $Setup -Report $report -Pump $pump
     $script:Finished = $true
     Set-ResultControls -Setup $Setup -Controls $controls

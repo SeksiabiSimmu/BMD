@@ -1,18 +1,21 @@
-# Brave Music Downloader — v2.5.0
+# Brave Music Downloader — v2.6.0
 
 Download only content you own or have permission to save. Output: **WAV (24-bit PCM), FLAC (24-bit lossless) or MP3 (320 kbps)**, chosen per download. Tags, BPM and cover artwork are embedded in the file (for WAV the cover is saved next to the track as `<track>.cover.jpg`). Optional loudness normalization, conservative MusicBrainz matching, playlist queue and browser actions. A lossless export cannot restore the quality of lossy YouTube audio.
 
-> **Status: release candidate, tested without a Windows PC.** The helper, the installer engine, the setup program's file container, the extension and the setup script are covered by 306 Python tests (44 of them drive the 44 PowerShell cases; 15 load the extension into a real Chromium when Playwright is installed), 72 JavaScript tests and 670 checks of the setup program's C core. The compiled setup program was run under Wine on Linux (self-test, extraction, damaged and foreign files, and how it passes exit codes on). The complete installation on a real Windows PC — Windows PowerShell 5.1, SmartScreen, the uninstaller, registry integration and live YouTube downloads in Brave — has **not** been verified; follow `WINDOWS_QA.md` before relying on it.
+> **Status: Windows-verified 2.6.0.** The helper, the installer engine (now also the installation manager's assessment), the setup program's file container, the extension and the setup script are covered by 290 Python tests (49 of them drive the 49 PowerShell cases; 15 more load the extension into a real Chromium where Playwright is installed), 73 JavaScript tests and 670 checks of the setup program's C core — all green on a real Windows 10 PC (Brave 158), where install, the installation manager, repair, diagnose, uninstall and a live download were verified end to end (`BUILD_AND_TEST_REPORT.md`). What still needs other machines is in `WINDOWS_QA.md`: the power-loss cases, a PC without Brave, Windows 7 / 32-bit, the offline installer on a truly offline PC, and SmartScreen behavior of the unsigned file.
 
 ## Install (Windows 10/11, 64-bit)
 
 1. Run **`BraveMusicDownloader-Setup.exe`**. It is a single file: nothing has to be built or unpacked first. Windows may warn because the installer is not code-signed (see *Security and limitations*).
    - On a PC without internet access, or where tool downloads are blocked, use **`BraveMusicDownloader-Setup-offline.exe`** instead: the same setup with Python, yt-dlp, Deno and FFmpeg on board (about 200 MB instead of under 1 MB).
-2. Setup provides portable Python, yt-dlp, Deno and FFmpeg (downloaded, or copied from the offline file), checks every one against the SHA-256 pinned for this release, and installs for your Windows user only (`%LOCALAPPDATA%\BraveMusicDownloader\app`). No administrator rights, PATH edits or browser policies.
-3. The install is **transactional**: it is built in a staging folder and swapped in only when everything checked out. If anything fails (or the PC loses power), the previous version and registry entries are restored automatically on the next run.
-4. **Upgrading?** The installer compares each component against the previous install and only replaces what changed — unchanged Python, yt-dlp, FFmpeg and Deno are reused, so most updates download only the app itself (a few MB). Your music, settings and download history are always kept.
-5. When setup completes, Brave opens `brave://extensions`. Turn on **Developer mode**, click **Load unpacked** and pick the folder copied to your clipboard (`…\app\extension`). Upgrading? Click the extension's reload arrow instead.
-6. Open the extension → **Full dashboard → Diagnostics → Run checks**. Files are saved in `Music\Brave Music Downloader` (Artist / Album or Singles folders by default).
+2. The **installation manager** opens: it checks the machine and shows every component - Brave, the program files, Python, yt-dlp, Deno, FFmpeg, Native Messaging (with a live helper round trip), the extension's link to the helper - green, yellow, red or grey. Click **Install**.
+3. Setup provides portable Python, yt-dlp, Deno and FFmpeg (downloaded, or copied from the offline file), checks every one against the SHA-256 pinned for this release, and installs for your Windows user only (`%LOCALAPPDATA%\BraveMusicDownloader\app`). No administrator rights, PATH edits or browser policies.
+4. The install is **transactional**: it is built in a staging folder and swapped in only when everything checked out. If anything fails (or the PC loses power), the previous version and registry entries are restored automatically on the next run.
+5. **Upgrading?** The manager says an update is available. The installer compares each component against the previous install and only replaces what changed — unchanged Python, yt-dlp, FFmpeg and Deno are reused, so most updates download only the app itself (a few MB). Your music, settings and download history are always kept.
+6. When setup completes, it opens the extension folder and `brave://extensions`. Turn on **Developer mode**, click **Load unpacked** and pick the folder (its path is also on your clipboard: `…\app\extension`). Upgrading? Click the extension's reload arrow instead.
+7. Open the extension → **Full dashboard → Diagnostics → Run checks**. Files are saved in `Music\Brave Music Downloader` (Artist / Album or Singles folders by default).
+
+**Repair** in the same manager diagnoses first and fixes exactly what is marked (missing or corrupted tools, broken registrations, an interrupted previous setup) — your music, settings and history are kept. **Uninstall** asks once, removes only what the installation record owns, and leaves the manager open. The manager re-checks the installation after every operation.
 
 ## Command line
 
@@ -20,9 +23,10 @@ Download only content you own or have permission to save. Output: **WAV (24-bit 
 
 | Option | Meaning |
 | --- | --- |
-| *(none)* | install, with a window that shows the progress |
+| *(none)* | open the installation manager: assess the machine, then choose Install, Repair or Uninstall |
+| `/MANAGE` | the same, explicitly |
 | `/S` (also `/SILENT`, `/VERYSILENT`, `/QUIET`) | install without any window or question |
-| `/CONSOLE` | install with text progress in the console |
+| `/CONSOLE` | text progress in the console |
 | `/UNINSTALL` | remove the installed program (keeps music, settings and history) |
 | `/REPAIR` | install again over the existing installation (keeps settings and history) |
 | `/DIAGNOSE` | write a diagnosis report; installs nothing |

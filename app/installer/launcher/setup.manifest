@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <!-- The version here is checked against the other version statements by scripts/build_release.py. -->
-  <assemblyIdentity type="win32" name="BraveMusicDownloader.Setup" version="2.5.0.0" processorArchitecture="amd64"/>
+  <assemblyIdentity type="win32" name="BraveMusicDownloader.Setup" version="2.6.0.0" processorArchitecture="amd64"/>
   <description>Brave Music Downloader Setup</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

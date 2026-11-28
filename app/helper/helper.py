@@ -1,4 +1,4 @@
-"""Brave Music Downloader 2.5.0: audio queue and processing engine (WAV / FLAC / MP3).
+"""Brave Music Downloader 2.6.0: audio queue and processing engine (WAV / FLAC / MP3).
 
 Runs inside the native-messaging host (stdlib only). There is no network server.
 Use only with content you are authorized to save.
@@ -36,7 +36,7 @@ from audio_core import (audio_filters, detect_bpm, encode_command, metadata_from
 from music_metadata import fetch_cover, match_track
 from store import FINAL_STATES, JOB_ID, Store
 
-VERSION = '2.5.0'
+VERSION = '2.6.0'
 OUTPUT = paths.OUTPUT
 JOB_CACHE = paths.JOB_CACHE
 MB_CACHE = paths.MB_CACHE

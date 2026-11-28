@@ -180,7 +180,9 @@ static void usage(const wchar_t *error_line) {
         if (self_path[k] == L'\\' || self_path[k] == L'/') last = k + 1;
     add(text, TEXT_CAP, self_path + last);
     add(text, TEXT_CAP, L" [options]\n\n"
-        "  (no option)        install, with a window that shows the progress\n"
+        "  (no option)        open the installation manager: it checks what is installed,\n"
+        "                     then offers Install, Repair and Uninstall\n"
+        "  /MANAGE            open the installation manager\n"
         "  /S  /SILENT        install without any window or question (/VERYSILENT and /QUIET are the same)\n"
         "  /CONSOLE           install with text progress in this console\n"
         "  /EXTRACT=<folder>  unpack the setup script and the application archive; installs nothing\n"
@@ -521,7 +523,9 @@ static int run_script(lc_source *source, const lc_container *parsed, const lc_op
     add(command, COMMAND_CAP, L" -Mode ");
     add(command, COMMAND_CAP, opt->ui == LC_UI_GUI ? L"Gui" : opt->ui == LC_UI_CONSOLE ? L"Console" : L"Silent");
     action = opt->action == LC_ACTION_UNINSTALL ? L"Uninstall" : opt->action == LC_ACTION_REPAIR ? L"Repair"
-             : opt->action == LC_ACTION_DIAGNOSE ? L"Diagnose" : L"Install";
+             : opt->action == LC_ACTION_DIAGNOSE ? L"Diagnose"
+             : opt->action == LC_ACTION_MANAGE && opt->ui != LC_UI_SILENT ? L"Manage"
+             : L"Install";           /* /S keeps its documented meaning: install silently */
     add(command, COMMAND_CAP, L" -Action ");
     add(command, COMMAND_CAP, action);
     if (opt->log_path) {

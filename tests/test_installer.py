@@ -393,14 +393,14 @@ class HostRoundTripTests(unittest.TestCase):
     def test_the_real_native_host_answers_a_health_request(self):
         host = ROOT / 'app' / 'helper' / 'native_host.py'
         data = ic.native_roundtrip([sys.executable, str(host)], env=self.env)
-        self.assertEqual(data['version'], '2.5.0')
+        self.assertEqual(data['version'], '2.6.0')
         self.assertTrue((self.tmp / 'data' / 'queue.sqlite3').exists())
 
     def test_a_launcher_that_only_forwards_input_when_stdin_closes_is_detected(self):
         # Reproduces the real bug: requests sat in a 4 KB buffer until the browser closed stdin.
         command = script(self.tmp, 'buffered.py', REPLY_PRELUDE + """
 sys.stdin.buffer.read()            # waits for EOF before doing anything
-reply({'id': 1, 'ok': True, 'data': {'version': '2.5.0'}})
+reply({'id': 1, 'ok': True, 'data': {'version': '2.6.0'}})
 """)
         with self.assertRaisesRegex(ic.InstallError, 'stayed open'):
             ic.native_roundtrip(command, env=self.env, timeout=1)
@@ -566,7 +566,7 @@ class BusyFolderTests(InstallBase):
 
         def fake(command, env=None, **kw):
             seen['env'] = env
-            return {'version': '2.5.0', 'output': 'x'}
+            return {'version': '2.6.0', 'output': 'x'}
 
         with mock.patch.object(ic, 'native_roundtrip', fake):
             ic.default_host_check(self.layout)
@@ -587,7 +587,7 @@ class HelperStaysOutOfSetupsWayTests(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def runs(self, env=None):
-        return ic.native_roundtrip(self.host, env=env or self.env, timeout=30)['version'] == '2.5.0'
+        return ic.native_roundtrip(self.host, env=env or self.env, timeout=30)['version'] == '2.6.0'
 
     def test_pid_alive_never_signals_and_handles_nonsense(self):
         self.assertTrue(ic.bmdfs.pid_alive(os.getpid()))
@@ -628,7 +628,7 @@ class InstallTests(InstallBase):
         self.assertEqual(self.leftovers(), [])
         self.assertFalse(self.layout.downloads.exists())
         saved = json.loads(self.layout.manifest.read_text())
-        self.assertEqual(saved['version'], '2.5.0')
+        self.assertEqual(saved['version'], '2.6.0')
         owned = {c['name']: c for c in saved['components']}
         self.assertTrue(all(c['owned'] for c in owned.values()))
         self.assertEqual({k: v['verified_by'] for k, v in owned.items()},
@@ -779,7 +779,7 @@ class InstallTests(InstallBase):
                 self.install()
         self.layout.lockfile.unlink(missing_ok=True)
         self.assertEqual(ic.recover_interrupted(self.layout, self.registry), 'finished')
-        self.assertEqual(json.loads(self.layout.manifest.read_text())['version'], '2.5.0')
+        self.assertEqual(json.loads(self.layout.manifest.read_text())['version'], '2.6.0')
         self.assertEqual(self.leftovers(), [])
 
     def test_bad_download_checksum_aborts_without_touching_the_old_app(self):
