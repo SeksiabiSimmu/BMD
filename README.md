@@ -1,8 +1,19 @@
 # Brave Music Downloader (BMD)
 
-A Brave browser extension plus a one-file Windows installer. It saves audio you own or have permission to save from YouTube as WAV (24-bit PCM), FLAC (24-bit lossless) or MP3 (320 kbps), with tags, BPM and cover artwork embedded in the file, and a simple dashboard with an "Advanced options" toggle.
+**One download. One double-click. One step in Brave.** Brave Music Downloader saves audio you own or have permission to save from YouTube as WAV (24-bit PCM), FLAC (24-bit lossless) or MP3 (320 kbps), with tags, BPM and cover artwork embedded in the file, and a simple dashboard with an "Advanced options" toggle.
 
-**Status: release candidate.** Built and tested on Linux and under Wine 10.0; the complete installation on a real Windows PC (Windows PowerShell 5.1, SmartScreen, the uninstaller, live downloads in Brave) is not verified yet. Work through `WINDOWS_QA.md` before relying on it. `CHANGELOG.md` describes what 2.5.0 contains; `docs/QA-REPORT-2.5.0.md` holds the full verification matrix of 18 user scenarios.
+## Install (Windows 10/11, 64-bit)
+
+1. **Download one file:** [`BraveMusicDownloader-Setup.exe`](https://github.com/SeksiabiSimmu/BMD/releases/latest) from the latest release (~226 KB). The installer downloads Python, yt-dlp, Deno and FFmpeg by itself and checks every one against a pinned SHA-256. No internet on that PC? Download `BraveMusicDownloader-Setup-offline.exe` from the same release — the four tools are inside it.
+2. **Double-click it.** Everything installs automatically for your Windows user: no administrator rights, no PATH changes, no browser policies. The installer verifies that the helper answers before it reports success.
+3. **One step in Brave** (its security rules do not allow silent extension installs): the installer opens the extension folder and `brave://extensions` for you — turn on **Developer mode**, click **Load unpacked**, pick the folder, done.
+4. Open the extension → **Full dashboard → Diagnostics → Run checks.** Files are saved in `Music\Brave Music Downloader`.
+
+Updating is the same one file — settings and history are kept and unchanged tools are reused. Repair, diagnostics and uninstall live in the same installer, the Start menu folder and Windows' Installed apps. Details: `docs/INSTALLATION.md`.
+
+## Status: Windows-verified 2.5.0
+
+Install, repair, diagnostics, uninstall and live downloads in Brave were verified on a real Windows 10 PC — the evidence is in `BUILD_AND_TEST_REPORT.md` and `docs/QA-REPORT-2.5.0.md`. What still needs other environments is listed in `WINDOWS_QA.md`: the power-loss cases, a PC without Brave, Windows 7 / 32-bit, the offline installer on a truly offline PC, and SmartScreen behavior of the unsigned file. `CHANGELOG.md` describes what 2.5.0 contains.
 
 ## What is here
 

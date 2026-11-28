@@ -1060,6 +1060,30 @@ Check 'work-cleanup' {
     Remove-SetupWork -Work (Join-Path $folder 'gone')                     # a missing folder: no error
 }
 
+Check 'install-opens-help-windows' {
+    # A finished install opens the extension folder (no folder navigation for Load unpacked)
+    # and, when Brave was found, its extension page. Found while walking the new-user flow.
+    $calls = New-List
+    $original = ${function:Start-Process}
+    try {
+        Set-Item function:Start-Process { param($FilePath, $ArgumentList) [void]$calls.Add(($FilePath + ' ' + $ArgumentList)) }
+        Open-InstallHelp -Browser 'C:\Brave\brave.exe' -Folder 'C:\app\extension'
+        Assert-Same 'explorer.exe "C:\app\extension"' $calls[0] 'the extension folder opens for Load unpacked'
+        Assert-Same 'C:\Brave\brave.exe brave://extensions' $calls[1] 'Brave opens at its extension page'
+        $calls.Clear()
+        Open-InstallHelp -Browser '' -Folder 'C:\app\extension'
+        Assert-Same 1 $calls.Count 'without Brave only the folder opens'
+        $calls.Clear()
+        Open-InstallHelp -Browser '' -Folder ''
+        Assert-Same 0 $calls.Count 'nothing to open: nothing is started'
+        Set-Item function:Start-Process { param($FilePath, $ArgumentList) throw 'explorer is busy' }
+        Open-InstallHelp -Browser 'C:\Brave\brave.exe' -Folder 'C:\app\extension'
+        Assert $true 'a window that cannot open is swallowed, not fatal'
+    } finally {
+        Set-Item function:Start-Process $original
+    }
+}
+
 # ==== Setup.ps1: the entry point in a child process ==========================================
 
 Check 'entry-uninstall-nothing' {

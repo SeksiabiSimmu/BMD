@@ -173,3 +173,27 @@ Machine end state after QA: BMD uninstalled (registry keys, app folder, Start me
 user data untouched, no `%TEMP%` leftovers. Nothing was committed or pushed by the QA pass: the
 working tree on the dedicated branch holds all changes, ready for review — commit/push only on
 the owner's say-so.
+
+## 10. Addendum — one-download experience pass (second cycle, 2026-11-28)
+
+Walking the release as a new user found three remaining friction points; all fixed on branch
+`ai/single-exe-installer-release`:
+
+- **The completion step needed folder navigation.** `Setup.ps1` now opens the extension folder
+  in Explorer and `brave://extensions` itself (`Open-InstallHelp`; in the GUI the folder opens
+  as soon as the completion screen appears, Brave via "Open Brave and close"; in console mode
+  both open at the end). The Load-unpacked click remains — Brave's security rules do not allow
+  silent extension installs — but the folder to pick is already open. Harness case:
+  `install-opens-help-windows`.
+- **The README led developers-first** and its status line still said "not verified on a real
+  Windows PC". It now leads with the one-file flow (download → double-click → the one step in
+  Brave) and the true Windows-verified status; `docs/INSTALLATION.md` step 3 matches the new
+  behavior.
+- **The release page offered seven files without a single recommended download.** The v2.5.0
+  release page was restructured (description only — the seven assets are unchanged) to lead
+  with `BraveMusicDownloader-Setup.exe` as the one recommended download and to group the rest
+  as special cases (offline PC, fallback install, checksums).
+
+Validation for this cycle: PowerShell harness **48 cases OK** (including the new one), full
+Python suite **280 tests OK**, release rebuilt twice byte-identically, `/SELFTEST` clean, and
+the extracted LF `Setup.ps1` executed under Windows PowerShell 5.1.

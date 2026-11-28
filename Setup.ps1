@@ -508,8 +508,8 @@ function Invoke-EngineRun {
 
 function Get-ExtensionSteps([string]$ExtensionFolder, [bool]$OnClipboard) {
     $lines = @('Finish in Brave:', '  1. Open brave://extensions.', '  2. Turn on Developer mode (upper right).')
-    if ($OnClipboard) { $lines += '  3. Click Load unpacked and select this folder (its path is on your clipboard):' }
-    else { $lines += '  3. Click Load unpacked and select this folder:' }
+    if ($OnClipboard) { $lines += '  3. Click Load unpacked and select this folder (it just opened in Explorer; its path is also on your clipboard):' }
+    else { $lines += '  3. Click Load unpacked and select this folder (it just opened in Explorer):' }
     $lines += @("     $ExtensionFolder", '     If an older version is already loaded, click its reload arrow instead.',
                 '  4. Open the extension, choose Full dashboard > Diagnostics, and press Run checks.',
                 "  Extension ID: $script:ExtensionId")
@@ -518,6 +518,14 @@ function Get-ExtensionSteps([string]$ExtensionFolder, [bool]$OnClipboard) {
 
 function Copy-ExtensionFolder([string]$ExtensionFolder) {
     try { Set-Clipboard -Value $ExtensionFolder -ErrorAction Stop; return $true } catch { return $false }
+}
+
+# After a successful install, open the two windows that guide the last step: the extension
+# folder (to pick in Brave's Load unpacked dialog) and, when Brave was found, its extension
+# page. Best effort: a window that cannot open never changes the installation result.
+function Open-InstallHelp([string]$Browser, [string]$Folder) {
+    if ($Folder) { try { Start-Process -FilePath 'explorer.exe' -ArgumentList (Quote $Folder) } catch { } }
+    if ($Browser) { try { Start-Process -FilePath $Browser -ArgumentList 'brave://extensions' } catch { } }
 }
 
 # Start menu entries. They run the uninstaller that is installed with the program, so they keep
@@ -717,8 +725,8 @@ function Invoke-Console {
     if ($code -eq 0) { Write-Host "Setup finished (exit code 0)." -ForegroundColor Green }
     elseif ($code -eq 9) { Write-Host "Nothing to remove (exit code 9)." -ForegroundColor Yellow }
     else { Write-Host "Setup did not complete (exit code $code)." -ForegroundColor Red }
-    if ($Setup.Outcome.Kind -eq 'Installed' -and $Setup.Browser) {
-        try { Start-Process -FilePath $Setup.Browser -ArgumentList 'brave://extensions' } catch { }
+    if ($Setup.Outcome.Kind -eq 'Installed') {
+        Open-InstallHelp -Browser $Setup.Browser -Folder $Setup.ExtensionFolder
     }
     return $code
 }
@@ -815,7 +823,7 @@ function Set-WindowCloseRequest($EventArgs) {
 # The one button: Cancel while setup runs; Close, opening Brave first, when it is done.
 function Invoke-PrimaryClick($Window, $Controls) {
     if ($script:Finished) {
-        if ($script:BrowserToOpen) { try { Start-Process -FilePath $script:BrowserToOpen -ArgumentList 'brave://extensions' } catch { } }
+        Open-InstallHelp -Browser $script:BrowserToOpen -Folder ''
         $Window.Close()
     } else {
         $script:CancelRequested = $true
@@ -841,6 +849,9 @@ function Set-ResultControls($Setup, $Controls) {
         $script:FolderToCopy = $Setup.ExtensionFolder
         $Controls.Secondary.Content = 'Copy folder'
         $Controls.Secondary.Visibility = 'Visible'
+        # The folder opens now, so the Load unpacked dialog needs no navigation; Brave opens
+        # through the button below.
+        Open-InstallHelp -Browser '' -Folder $script:FolderToCopy
         if ($Setup.Browser) {
             $script:BrowserToOpen = $Setup.Browser
             $Controls.Primary.Content = 'Open Brave and close'

@@ -26,7 +26,7 @@ Both setup files behave identically otherwise. The extension archive is **not** 
 
 1. Double-click the setup file. Windows may warn because the file is not code-signed.
 2. Wait for "Installation complete". Everything is built in a staging folder and swapped in at the end; if the installation fails or the PC loses power, the previous version and the registry entries are restored on the next run.
-3. Brave opens `brave://extensions`. Turn on **Developer mode**, click **Load unpacked** and pick the folder copied to your clipboard (`%LOCALAPPDATA%\BraveMusicDownloader\app\extension`). When upgrading, click the extension's reload arrow instead.
+3. The installer opens the extension folder in Explorer and `brave://extensions`. Turn on **Developer mode**, click **Load unpacked** and pick the folder (its path is also on your clipboard: `%LOCALAPPDATA%\BraveMusicDownloader\app\extension`). When upgrading, click the extension's reload arrow instead.
 4. Open the extension → **Full dashboard → Diagnostics → Run checks**.
 
 Files are saved in `Music\Brave Music Downloader`. The log of the installation is `%LOCALAPPDATA%\BraveMusicDownloader\Install.log`.
