@@ -70,6 +70,7 @@ STORE = None
 ACTIVE = {}
 ACTIVE_LOCK = threading.Lock()
 WORKER_STATE = {'current': None}
+WORKER_STOP = threading.Event()
 WAKE = threading.Event()
 
 
@@ -783,7 +784,7 @@ def process_job(ident):
 
 
 def worker_loop():
-    while True:
+    while not WORKER_STOP.is_set():
         try:
             with ACTIVE_LOCK:
                 job = STORE.next_queued()
@@ -791,11 +792,12 @@ def worker_loop():
                     WORKER_STATE['current'] = job['id']
         except Exception:               # a locked or briefly unreadable store must not kill the worker
             LOG.exception('Worker could not read the next job')
-            WAKE.wait(2)
-            WAKE.clear()
+            if WORKER_STOP.wait(2):
+                break
             continue
         if not job:
-            WAKE.wait(1)
+            if WORKER_STOP.wait(1):
+                break
             WAKE.clear()
             continue
         try:

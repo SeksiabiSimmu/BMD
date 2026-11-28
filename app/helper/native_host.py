@@ -316,6 +316,7 @@ def main():
                     processes = list(core.ACTIVE.values())
                 for proc in processes:
                     core.kill_process(proc)
+                core.WORKER_STOP.set()      # the worker exits after its current job
                 core.WAKE.set()
     except Exception as exc:
         core.LOG.exception('Native host fatal')

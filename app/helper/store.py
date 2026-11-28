@@ -49,6 +49,10 @@ class Store:
         if version > SCHEMA_VERSION:
             raise RuntimeError('Queue database was created by a newer Brave Music Downloader')
         if version == SCHEMA_VERSION:
+            # Covers databases that an older release already migrated while carrying an
+            # incompatible leftover `library` table (found in the wild: a pre-2.3
+            # songfinder-era index that made every download fail at commit).
+            self._ensure_library_schema(c)
             return
         has_jobs = c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='jobs'").fetchone()
         if has_jobs:
@@ -76,13 +80,24 @@ class Store:
             c.execute('CREATE INDEX IF NOT EXISTS jobs_page ON jobs(rank, ord, id)')
             c.execute('CREATE INDEX IF NOT EXISTS jobs_state_ord ON jobs(state, ord, id)')
             c.execute('CREATE INDEX IF NOT EXISTS jobs_video ON jobs(video_id)')
-            c.execute('''CREATE TABLE IF NOT EXISTS library (
-                video_id TEXT PRIMARY KEY, path TEXT NOT NULL, size INTEGER NOT NULL, added REAL NOT NULL)''')
+            self._ensure_library_schema(c)
             c.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
             c.execute('COMMIT')
         except BaseException:
             c.execute('ROLLBACK')
             raise
+
+    def _ensure_library_schema(self, c):
+        """The library index must have exactly the 2.3+ shape. A pre-2.3 database can carry
+        its own `library` table with a different shape; CREATE IF NOT EXISTS would keep it and
+        every later library write would fail, so an incompatible leftover is dropped. The
+        index rebuilds itself from the actual music folder on the next reconcile pass, so no
+        user data is lost - only the cached path hints."""
+        lib_cols = {row[1] for row in c.execute('PRAGMA table_info(library)').fetchall()}
+        if lib_cols and lib_cols != {'video_id', 'path', 'size', 'added'}:
+            c.execute('DROP TABLE library')
+        c.execute('''CREATE TABLE IF NOT EXISTS library (
+            video_id TEXT PRIMARY KEY, path TEXT NOT NULL, size INTEGER NOT NULL, added REAL NOT NULL)''')
 
     def recover_interrupted(self):
         """Jobs left 'running' by a crash or power loss go back to the queue."""

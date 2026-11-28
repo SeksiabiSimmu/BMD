@@ -131,6 +131,46 @@ class StoreTests(Base):
             "EXPLAIN QUERY PLAN SELECT payload FROM jobs WHERE state='done' ORDER BY ord, id LIMIT 10"))
         self.assertIn('jobs_state_ord', plan)
 
+    def test_a_pre_2_3_library_table_is_replaced_not_kept(self):
+        # Found in the wild (2.0.x songfinder-era database): a `library` table with only
+        # video_id/path/size survives CREATE IF NOT EXISTS and then breaks every download
+        # commit ("table library has 3 columns but 4 values were supplied"). Both an old
+        # database migrating up and a database a buggy older release already migrated must
+        # end with the 4-column index; its rows are only path hints and rebuild from disk.
+        import sqlite3
+        db = self.tmp / 'old-library.sqlite3'
+        c = sqlite3.connect(str(db))
+        c.execute("CREATE TABLE jobs (id TEXT PRIMARY KEY, video_id TEXT NOT NULL, state TEXT NOT NULL,"
+                  " created REAL NOT NULL, updated REAL NOT NULL, payload TEXT NOT NULL)")
+        c.execute("CREATE TABLE library (video_id TEXT PRIMARY KEY, path TEXT NOT NULL, size INTEGER NOT NULL)")
+        c.execute("INSERT INTO library VALUES ('v0ld0000000', 'C:/gone/old.wav', 123)")
+        c.execute('PRAGMA user_version=0')
+        c.commit()
+        c.close()
+        store = store_mod.Store(db)
+        info = store.info()
+        self.assertEqual(info['schema'], 1)
+        self.assertEqual(info['library_entries'], 0, 'the incompatible old index is dropped')
+        store.library_put('abc12345678', self.tmp / 'm.mp3', 7)
+        self.assertEqual(store.library_get('abc12345678'), str(self.tmp / 'm.mp3'))
+        store.close()
+        # Scenario B: a database an older release already migrated to v1 with the bad table.
+        db2 = self.tmp / 'v1-bad-library.sqlite3'
+        c = sqlite3.connect(str(db2))
+        c.execute("CREATE TABLE jobs (id TEXT PRIMARY KEY, video_id TEXT NOT NULL, state TEXT NOT NULL,"
+                  " created REAL NOT NULL, updated REAL NOT NULL, payload TEXT NOT NULL, rank INTEGER NOT NULL DEFAULT 2,"
+                  " ord REAL NOT NULL DEFAULT 0)")
+        c.execute("CREATE TABLE library (video_id TEXT PRIMARY KEY, path TEXT NOT NULL, size INTEGER NOT NULL)")
+        c.execute("INSERT INTO library VALUES ('stale', 'C:/gone/x.mp3', 5)")
+        c.execute('PRAGMA user_version=1')
+        c.commit()
+        c.close()
+        store = store_mod.Store(db2)
+        self.assertEqual(store.info()['library_entries'], 0)
+        store.library_put('abc12345678', self.tmp / 'm.mp3', 7)
+        self.assertEqual(store.library_get('abc12345678'), str(self.tmp / 'm.mp3'))
+        store.close()
+
     def test_migrates_v20_database_without_losing_history(self):
         path = self.tmp / 'old.sqlite3'
         c = sqlite3.connect(path)
@@ -800,9 +840,11 @@ class WorkerLoopTests(Base):
                     break
                 time.sleep(0.05)
         finally:
+            helper.WORKER_STOP.set()     # the daemon worker must not survive into later tests
             helper.WAKE.set()
-            helper.STORE = restored
             worker.join(5)
+            helper.WORKER_STOP.clear()
+            helper.STORE = restored
         self.assertTrue(state['raised'], 'the fault was injected')
         self.assertEqual(self.store.get(ident)['state'], 'done',
                          'the worker kept going after the store error')
@@ -812,7 +854,10 @@ class MaintenanceTests(Base):
     def test_sweep_cache_only_removes_what_it_owns(self):
         done, running, err_old, err_new = (self.enqueue('v%010d' % i) for i in range(4))
         self.store.update(done, state='done')
-        self.store.next_queued()                        # first queued job becomes running
+        # Mark the second job running directly: next_queued() would pick the OLDEST queued
+        # job by (created, id), and rapid enqueues can share a created timestamp, leaving
+        # the hex id to decide - the test must not depend on that order.
+        self.store.update(running, state='running')
         self.store.update(err_old, state='error')
         self.store.update(err_new, state='error')
         orphan = '%032x' % 999
@@ -824,6 +869,8 @@ class MaintenanceTests(Base):
         self.store.conn.execute('UPDATE jobs SET updated=? WHERE id=?', (old, err_old))
         self.store.conn.commit()
         removed = set(helper.sweep_cache())
+        import json as _j
+        print('SWEEP-DEBUG states:', _j.dumps(helper.STORE.states([done, running, err_old, err_new, orphan])), ' removed:', sorted(removed))
         self.assertEqual(removed, {done, err_old, orphan} | ({running} if self.store.get(running)['state'] != 'running' else set()))
         self.assertTrue((self.cache / err_new).exists())
         self.assertTrue((self.cache / 'not-a-job').exists())
